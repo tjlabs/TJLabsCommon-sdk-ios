@@ -1,4 +1,4 @@
-class CommonConstants {
+public class CommonConstants {
     static let OPERATING_SYSTEM: String = "iOS"
     static let MODE_DR = "dr"
     static let MODE_PDR = "pdr"

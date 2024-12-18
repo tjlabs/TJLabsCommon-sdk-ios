@@ -2,7 +2,7 @@ import Foundation
 
 public class TJLabsUVDGenerator: NSObject {
     
-    public override init() { }
+    override public init() { }
     
     var unitMode = String()
     
@@ -53,11 +53,11 @@ public class TJLabsUVDGenerator: NSObject {
     
     public func generateDRInfo(sensorData: TJLabsSensorData) -> UnitDRInfo {
         if (unitMode != CommonConstants.MODE_PDR && unitMode != CommonConstants.MODE_DR && unitMode != CommonConstants.MODE_AUTO) {
-            print(getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " unitMode is forcibly set to auto (\(unitMode) - > MODR_AUTO)")
+            print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " unitMode is forcibly set to auto (\(unitMode) - > MODR_AUTO)")
             unitMode = CommonConstants.MODE_AUTO
         }
         
-        let currentTime = getCurrentTimeInMillisecondsDouble()
+        let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         
         var curAttitudeDr = Attitude(Roll: 0, Pitch: 0, Yaw: 0)
         var curAttitudePdr = Attitude(Roll: 0, Pitch: 0, Yaw: 0)
