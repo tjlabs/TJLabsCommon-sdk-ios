@@ -21,36 +21,31 @@ public struct TJLabsUtilFunctions {
         return Date().timeIntervalSince1970 * 1000
     }
 
+    public func flattenAndUniquify(_ array2D: [[Double]]) -> [Double] {
+        return Array(Set(array2D.flatMap { $0 }))
+    }
+    
     public func removeLevelDirectionString(levelName: String) -> String {
         return levelName.replacingOccurrences(of: "_D", with: "")
     }
 
-    public func movingAverage(preMvalue: Double, curValue: Double, windowSize: Int) -> Double {
+    public func movingAverage(preAvgValue: Double, curValue: Double, windowSize: Int) -> Double {
         let windowSizeDouble = Double(windowSize)
-        return preMvalue * ((windowSizeDouble - 1) / windowSizeDouble) + (curValue / windowSizeDouble)
+        return preAvgValue * ((windowSizeDouble - 1) / windowSizeDouble) + (curValue / windowSizeDouble)
     }
 
-    public func compensateHeading(heading: Double) -> Double {
-        return fmod((heading + 360).truncatingRemainder(dividingBy: 360), 360)
+    public func compensateDegree(_ degree: Double) -> Double {
+        return fmod((degree + 360).truncatingRemainder(dividingBy: 360), 360)
     }
 
-    public func flattenAndUniquify(_ array2D: [[Double]]) -> [Double] {
-        return Array(Set(array2D.flatMap { $0 }))
-    }
+    public func weightedAverageDegree(degreeA: Double, degreeB: Double, weightA: Double, weightB: Double) -> Double {
+        let radianA = degree2radian(degree: compensateDegree(degreeA))
+        let radianB = degree2radian(degree: compensateDegree(degreeB))
 
-    public func normalizeAngle(_ angle: Double) -> Double {
-        let normalizedAngle = angle.truncatingRemainder(dividingBy: 360)
-        return normalizedAngle < 0 ? normalizedAngle + 360 : normalizedAngle
-    }
+        let x = weightA * cos(radianA) + weightB * cos(radianB)
+        let y = weightA * sin(radianA) + weightB * sin(radianB)
 
-    public func weightedAverageHeading(A: Double, B: Double, weightA: Double, weightB: Double) -> Double {
-        let A_rad = degree2radian(degree: normalizeAngle(A))
-        let B_rad = degree2radian(degree: normalizeAngle(B))
-
-        let x = weightA * cos(A_rad) + weightB * cos(B_rad)
-        let y = weightA * sin(A_rad) + weightB * sin(B_rad)
-
-        return normalizeAngle(radian2degree(radian: atan2(y, x)))
+        return compensateDegree(radian2degree(radian: atan2(y, x)))
     }
 
     public func determineClosestDirection(for angles: (Double, Double)) -> String? {
@@ -59,14 +54,9 @@ public struct TJLabsUtilFunctions {
             "ver": [90.0, 270.0]
         ]
 
-        func angularDifference(from angle1: Double, to angle2: Double) -> Double {
-            let diff = abs(angle1 - angle2)
-            return min(diff, 360 - diff)
-        }
-
         for (directionName, referenceAngles) in directions {
             if referenceAngles.allSatisfy({ refAngle in
-                angularDifference(from: angles.0, to: refAngle) <= 40 || angularDifference(from: angles.1, to: refAngle) <= 40
+                calDegreeDifference(from: angles.0, to: refAngle) <= 40 || calDegreeDifference(from: angles.1, to: refAngle) <= 40
             }) {
                 return directionName
             }
@@ -74,9 +64,14 @@ public struct TJLabsUtilFunctions {
 
         return nil
     }
+    
+    public func calDegreeDifference(from angle1: Double, to angle2: Double) -> Double {
+        let diff = abs(angle1 - angle2)
+        return min(diff, 360 - diff)
+    }
 
     public func exponentialMovingAverage(preEMA: Double, curValue: Double, windowSize: Int) -> Double {
-        return movingAverage(preMvalue: preEMA, curValue: curValue, windowSize: windowSize)
+        return movingAverage(preAvgValue: preEMA, curValue: curValue, windowSize: windowSize)
     }
 
     public func calAngleOfRotation(timeInterval: Double, angularVelocity: Double) -> Double {
