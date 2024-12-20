@@ -1,6 +1,10 @@
 import Foundation
 
-public struct TJLabsUtilFunctions {
+public class TJLabsUtilFunctions: NSObject {
+    public static let shared = TJLabsUtilFunctions()
+    
+    override init() { }
+    
     // MARK: - public
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -8,7 +12,7 @@ public struct TJLabsUtilFunctions {
         formatter.locale = Locale(identifier: "ko_KR")
         return formatter
     }()
-
+    
     public func getLocalTimeString() -> String {
         return dateFormatter.string(from: Date())
     }
