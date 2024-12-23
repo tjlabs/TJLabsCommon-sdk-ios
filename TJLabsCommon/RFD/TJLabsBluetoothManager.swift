@@ -81,34 +81,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         NotificationCenter.default.post(name: .tjlabsStopScan, object: nil)
     }
     
-    func startWaitTimer() {
-        waitTimerCounter = 0
-        self.waitTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.waitTimerUpdate()
-        }
-    }
-    
-    func stopWaitTimer() {
-        if waitTimer != nil {
-            waitTimer!.invalidate()
-            waitTimer = nil
-        }
-    }
-    
-    func waitTimerUpdate() {
-        stopScan()
-        startScan(scanFilter: self.scanFilters)
-    }
-    
-//    func getBLEDataTJ() -> [String: [[Double]]] {
-//        return self.bleDictionaryTJ
-//    }
-//    
-//    func getBLEDataNI() -> [String: [[Double]]] {
-//        return self.bleDictionaryNI
-//    }
-    
     private func containsScanFilter(scanFilter: [RFD_SCAN_FILTER], bleName: String) -> Bool {
         return scanFilter.contains { bleName.contains($0.rawValue) }
     }
@@ -171,7 +143,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                         $0.0.contains(bleName)
                     }
                     
-                    var bleScanned = self.bleDictionary
+                    var bleScanned = self.bleDictionary.mapValues { $0.map { $0 } }
                     let rssiValue = RSSI.doubleValue
                     if (bleScanned.contains(where: condition)) {
                         let data = bleScanned.filter(condition)
