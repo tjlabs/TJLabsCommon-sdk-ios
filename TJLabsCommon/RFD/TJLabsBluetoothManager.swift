@@ -34,6 +34,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     var bleDictionary = [String: [[Double]]]()
     
     var bleLastScannedTime: Double = 0
+    var wardLastScannedTime: Double = 0
     var bleValidTime: Double = 1000
     
     override init() {
@@ -50,6 +51,14 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         return self.bleValidTime
     }
     
+    func getWardLastScanTime() -> Double {
+        return self.wardLastScannedTime
+    }
+    
+    func getBLEDictionary() -> [String: [[Double]]] {
+        return self.bleDictionary
+    }
+    
     func startScan(scanFilter: [RFD_SCAN_FILTER]) -> (Bool, String) {
         let localTime: String = TJLabsUtilFunctions.shared.getLocalTimeString()
         let message: String = localTime + " , " + CommonConstants.COMMON_HEADER
@@ -61,9 +70,8 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         if bluetoothReady {
             self.centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: true as Bool)])
             self.isScanning = true
-            NotificationCenter.default.post(name: .tjlabsStartScan, object: nil)
-            
             self.scanFilters = scanFilter
+            NotificationCenter.default.post(name: .tjlabsStartScan, object: nil)
             let succssMessage = message + " Success : Bluetooth Initialization"
             return (true, succssMessage)
         } else {
@@ -77,7 +85,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         self.isScanning = false
         self.bleDictionary = [String: [[Double]]]()
         self.scanFilters = [RFD_SCAN_FILTER]()
-        
         NotificationCenter.default.post(name: .tjlabsStopScan, object: nil)
     }
     
@@ -89,8 +96,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     var isBluetoothPermissionGranted: Bool {
         if #available(iOS 13.1, *) {
             return CBCentralManager.authorization == .allowedAlways
-        } else if #available(iOS 13.0, *) {
-            return CBCentralManager().authorization == .allowedAlways
         }
         return true
     }
@@ -106,7 +111,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
             NotificationCenter.default.post(name: .tjlabsBluetoothReady, object: nil, userInfo: nil)
             
             if self.centralManager.isScanning == false {
-                startScan(scanFilter: self.scanFilters)
+                _ = startScan(scanFilter: self.scanFilters)
             }
             break
         case .resetting:
@@ -120,7 +125,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         @unknown default:
             print("CBCentralManage: unknown state")
         }
-        
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
@@ -128,8 +132,9 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         self.bleLastScannedTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         if let bleName = discoveredPeripheral.name {
             if containsScanFilter(scanFilter: self.scanFilters, bleName: bleName) {
-                let deviceIDString = bleName.substring(from: 8, to: 15)
+                if bleName.contains("TJ-") { self.wardLastScannedTime = self.bleLastScannedTime }
                 
+                let deviceIDString = bleName.substring(from: 8, to: 15)
                 var userInfo = [String:String]()
                 userInfo["Identifier"] = peripheral.identifier.uuidString
                 userInfo["DeviceID"] = deviceIDString
@@ -199,7 +204,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let error = error {
             print("Error discovering services: \(error.localizedDescription)")
-            
             return
         }
         
@@ -208,7 +212,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                 readCharacteristic = characteristic
                 if readCharacteristic!.isNotifying != true {
                     discoveredPeripheral.setNotifyValue(true, for: readCharacteristic!)
-                    
                 }
             }
             if characteristic.uuid.isEqual(UUIDWrite) {
@@ -245,7 +248,6 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                         output.append(encoded)
                     }
                 }
-                
                 return NSURL(string: output)
             }
         }

@@ -35,3 +35,8 @@ public struct ReceivedForce: Encodable {
         self.pressure = pressure
     }
 }
+
+// MARK: - Protocol
+public protocol RFDGeneratorDelegate: AnyObject {
+    func didGenerateReceivedForce(_ generator: RFDGenerator, receivedForce: ReceivedForce)
+}
