@@ -5,13 +5,15 @@ public class RFDGenerator: NSObject {
     let bleManager = TJLabsBluetoothManager()
     var receivedForceTimer: DispatchSourceTimer?
     
+    var user_id: String = "Unknown"
     var scanFilters = [RFD_SCAN_FILTER]()
     var timerInterval: TimeInterval = 1/2
     var bleValidTime: Double = 0
     
     public weak var delegate: RFDGeneratorDelegate?
     
-    public init(scanFilter: [RFD_SCAN_FILTER], interval: TimeInterval) {
+    public init(id: String, scanFilter: [RFD_SCAN_FILTER], interval: TimeInterval) {
+        self.user_id = id
         self.scanFilters = scanFilter
         self.timerInterval = interval
         self.bleValidTime = bleManager.getBluetoothValidTime()
@@ -67,14 +69,16 @@ public class RFDGenerator: NSObject {
         let trimmedResult = RFDFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, validTime: self.bleValidTime)
         
         let data: ReceivedForce
+        var info = RFDInfo.success
         switch trimmedResult {
         case .success(let trimmedBLE):
             let bleAvg = RFDFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
-            data = ReceivedForce(user_id: "leo", mobile_time: Int(currentTime), ble: bleAvg, pressure: 0)
+            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: bleAvg, pressure: 0)
         case .failure(_):
-            data = ReceivedForce(user_id: "leo", mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
+            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
+            info = .fail
         }
         
-        delegate?.didGenerateReceivedForce(self, receivedForce: data)
+        delegate?.didGenerateReceivedForce(self, receivedForce: data, info: info)
     }
 }

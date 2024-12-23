@@ -21,6 +21,11 @@ enum TrimBleDataError: Error {
     case noValidData
 }
 
+public enum RFDInfo {
+    case success
+    case fail
+}
+
 // MARK: - Structs
 public struct ReceivedForce: Encodable {
     let user_id: String
@@ -38,5 +43,5 @@ public struct ReceivedForce: Encodable {
 
 // MARK: - Protocol
 public protocol RFDGeneratorDelegate: AnyObject {
-    func didGenerateReceivedForce(_ generator: RFDGenerator, receivedForce: ReceivedForce)
+    func didGenerateReceivedForce(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
 }
