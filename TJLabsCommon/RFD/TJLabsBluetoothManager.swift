@@ -1,10 +1,11 @@
 import CoreBluetooth
 import Foundation
 
-let UUIDService    = CBUUID(string: BLEConstants.NRF_UUID_SERVICE)
-let UUIDRead       = CBUUID(string: BLEConstants.NRF_UUID_CHAR_READ)
-let UUIDWrite      = CBUUID(string: BLEConstants.NRF_UUID_CHAR_WRITE)
-let NIService      = CBUUID(string: BLEConstants.NI_UUID_SERVICE)
+let UUIDService     = CBUUID(string: BLEConstants.NRF_UUID_SERVICE)
+let UUIDRead        = CBUUID(string: BLEConstants.NRF_UUID_CHAR_READ)
+let UUIDWrite       = CBUUID(string: BLEConstants.NRF_UUID_CHAR_WRITE)
+let NIService       = CBUUID(string: BLEConstants.NI_UUID_SERVICE)
+let oneServiceUUID  = CBUUID(string: BLEConstants.TJLABS_WARD_UUID)
 
 class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     var centralManager: CBCentralManager!
@@ -28,16 +29,9 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     
     var waitTimer: Timer? = nil
     var waitTimerCounter: Int = 0
-    
-    let oneServiceUUID   = CBUUID(string: BLEConstants.TJLABS_WARD_UUID)
-    
-    var isActivateNI: Bool = false
-    
-    var bleDictionaryTJ = [String: [[Double]]]()
-    var bleDiscoveredTimeTJ: Double = 0
-    
-    var bleDictionaryNI = [String: [[Double]]]()
-    var bleDiscoveredTimeNI: Double = 0
+
+    var scanFilters = [RFD_SCAN_FILTER]()
+    var bleDictionary = [String: [[Double]]]()
     
     var bleLastScannedTime: Double = 0
     var bleValidTime: Double = 1000
@@ -56,11 +50,10 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         return self.bleValidTime
     }
     
-    func startScan(activateNI: Bool) -> (Bool, String) {
+    func startScan(scanFilter: [RFD_SCAN_FILTER]) -> (Bool, String) {
         let localTime: String = TJLabsUtilFunctions.shared.getLocalTimeString()
         let message: String = localTime + " , " + CommonConstants.COMMON_HEADER
         
-        self.isActivateNI = activateNI
         if centralManager.isScanning {
             stopScan()
         }
@@ -70,6 +63,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
             self.isScanning = true
             NotificationCenter.default.post(name: .tjlabsStartScan, object: nil)
             
+            self.scanFilters = scanFilter
             let succssMessage = message + " Success : Bluetooth Initialization"
             return (true, succssMessage)
         } else {
@@ -81,12 +75,8 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     func stopScan() {
         self.centralManager.stopScan()
         self.isScanning = false
-        self.bleDictionaryTJ = [String: [[Double]]]()
-        self.bleDiscoveredTimeTJ = 0
-        
-        self.isActivateNI = false
-        self.bleDictionaryNI = [String: [[Double]]]()
-        self.bleDiscoveredTimeNI = 0
+        self.bleDictionary = [String: [[Double]]]()
+        self.scanFilters = [RFD_SCAN_FILTER]()
         
         NotificationCenter.default.post(name: .tjlabsStopScan, object: nil)
     }
@@ -108,15 +98,19 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     
     func waitTimerUpdate() {
         stopScan()
-        startScan(activateNI: self.isActivateNI)
+        startScan(scanFilter: self.scanFilters)
     }
     
-    func getBLEDataTJ() -> [String: [[Double]]] {
-        return self.bleDictionaryTJ
-    }
+//    func getBLEDataTJ() -> [String: [[Double]]] {
+//        return self.bleDictionaryTJ
+//    }
+//    
+//    func getBLEDataNI() -> [String: [[Double]]] {
+//        return self.bleDictionaryNI
+//    }
     
-    func getBLEDataNI() -> [String: [[Double]]] {
-        return self.bleDictionaryNI
+    private func containsScanFilter(scanFilter: [RFD_SCAN_FILTER], bleName: String) -> Bool {
+        return scanFilter.contains { bleName.contains($0.rawValue) }
     }
     
     // MARK: - Bluetooth Permission
@@ -140,7 +134,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
             NotificationCenter.default.post(name: .tjlabsBluetoothReady, object: nil, userInfo: nil)
             
             if self.centralManager.isScanning == false {
-                startScan(activateNI: self.isActivateNI)
+                startScan(scanFilter: self.scanFilters)
             }
             break
         case .resetting:
@@ -161,7 +155,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         discoveredPeripheral = peripheral
         self.bleLastScannedTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         if let bleName = discoveredPeripheral.name {
-            if bleName.contains("TJ-") {
+            if containsScanFilter(scanFilter: self.scanFilters, bleName: bleName) {
                 let deviceIDString = bleName.substring(from: 8, to: 15)
                 
                 var userInfo = [String:String]()
@@ -171,15 +165,13 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                 
                 let bleTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
                 let validTime = self.bleValidTime*2
-                self.bleDiscoveredTimeTJ = bleTime
                 
                 if RSSI.intValue != 127 {
                     let condition: ((String, [[Double]])) -> Bool = {
                         $0.0.contains(bleName)
                     }
                     
-                    var bleScanned = self.bleDictionaryTJ
-                    
+                    var bleScanned = self.bleDictionary
                     let rssiValue = RSSI.doubleValue
                     if (bleScanned.contains(where: condition)) {
                         let data = bleScanned.filter(condition)
@@ -195,46 +187,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                     let trimmedResult = RFDFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, validTime: validTime)
                     switch trimmedResult {
                     case .success(let trimmedData):
-                        self.bleDictionaryTJ = trimmedData
-                    case .failure(let error):
-                        print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : BluetoothManager \(error)")
-                    }
-                }
-            } else if bleName.contains("NI-") && self.isActivateNI {
-                let deviceIDString = bleName.substring(from: 8, to: 15)
-                
-                var userInfo = [String:String]()
-                userInfo["Identifier"] = peripheral.identifier.uuidString
-                userInfo["DeviceID"] = deviceIDString
-                userInfo["RSSI"] = String(format: "%d", RSSI.intValue )
-                
-                let bleTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-                let validTime = self.bleValidTime*2
-                self.bleDiscoveredTimeNI = bleTime
-                
-                if RSSI.intValue != 127 {
-                    let condition: ((String, [[Double]])) -> Bool = {
-                        $0.0.contains(bleName)
-                    }
-                    
-                    var bleScanned = self.bleDictionaryNI
-                    
-                    let rssiValue = RSSI.doubleValue
-                    if (bleScanned.contains(where: condition)) {
-                        let data = bleScanned.filter(condition)
-                        var value:[[Double]] = data[bleName]!
-                        
-                        let dataToAdd: [Double] = [rssiValue, bleTime]
-                        value.append(dataToAdd)
-                        
-                        bleScanned.updateValue(value, forKey: bleName)
-                    } else {
-                        bleScanned.updateValue([[rssiValue, bleTime]], forKey: bleName)
-                    }
-                    let trimmedResult = RFDFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, validTime: validTime)
-                    switch trimmedResult {
-                    case .success(let trimmedData):
-                        self.bleDictionaryNI = trimmedData
+                        self.bleDictionary = trimmedData
                     case .failure(let error):
                         print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : BluetoothManager \(error)")
                     }

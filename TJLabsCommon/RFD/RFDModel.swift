@@ -10,6 +10,11 @@ struct BLEConstants {
     static let BASE_UUID            = "-0000-1000-8000-00805f9b34fb"
 }
 
+public enum RFD_SCAN_FILTER: String {
+    case TJ = "TJ-"
+    case NI = "NI-"
+}
+
 // MARK: - Enums
 enum TrimBleDataError: Error {
     case invalidInput
@@ -18,14 +23,14 @@ enum TrimBleDataError: Error {
 
 // MARK: - Structs
 public struct ReceivedForce: Encodable {
-    let userID: String
-    let mobileTime: Int
+    let user_id: String
+    let mobile_time: Int
     let ble: [String: Double]
     let pressure: Double
 
-    public init(userID: String, mobileTime: Int, ble: [String: Double], pressure: Double) {
-        self.userID = userID
-        self.mobileTime = mobileTime
+    public init(user_id: String, mobile_time: Int, ble: [String: Double], pressure: Double) {
+        self.user_id = user_id
+        self.mobile_time = mobile_time
         self.ble = ble
         self.pressure = pressure
     }
