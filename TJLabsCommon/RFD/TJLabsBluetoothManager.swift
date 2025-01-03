@@ -155,10 +155,10 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                 userInfo["RSSI"] = String(format: "%d", RSSI.intValue )
                 
                 let bleTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-                let validTime = self.bleValidTime*2
+                let validTime = self.bleScanWindowTime*2
                 
                 let RSSIIntValue = RSSI.intValue
-                if RSSIIntValue != 127 && RSSIIntValue >= self.minRSSIThreshold && RSSIIntValue <= self.maxRSSIThreshold {
+                if RSSIIntValue != 127 && RSSIIntValue >= self.minRssiThreshold && RSSIIntValue <= self.maxRssiThreshold {
                     let condition: ((String, [[Double]])) -> Bool = {
                         $0.0.contains(bleName)
                     }
@@ -176,7 +176,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                     } else {
                         bleScanned.updateValue([[rssiValue, bleTime]], forKey: bleName)
                     }
-                    let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, validTime: validTime)
+                    let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, scanWindowTime: bleScanWindowTime)
                     switch trimmedResult {
                     case .success(let trimmedData):
                         self.bleDictionary = trimmedData
