@@ -35,7 +35,9 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     
     var bleLastScannedTime: Double = 0
     var wardLastScannedTime: Double = 0
-    var bleValidTime: Double = 1000
+    var bleScanWindowTime: Double = 1000
+    var minRssiThreshold: Int = -100
+    var maxRssiThreshold: Int = -40
     
     override init() {
         super.init()
@@ -43,16 +45,24 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         self.bleLastScannedTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
     }
     
-    func setBluetoothValidTime(value: Double) {
-        self.bleValidTime = value
+    func setBleScanWindowTime(value: Double) {
+        self.bleScanWindowTime = value
     }
     
-    func getBluetoothValidTime() -> Double {
-        return self.bleValidTime
+    func getBleScanWindowTime() -> Double {
+        return self.bleScanWindowTime
     }
     
     func getWardLastScanTime() -> Double {
         return self.wardLastScannedTime
+    }
+    
+    func setMinRssiThreshold(value: Int) {
+        self.minRssiThreshold = value
+    }
+    
+    func setMaxRssiThreshold(value: Int) {
+        self.maxRssiThreshold = value
     }
     
     func getBLEDictionary() -> [String: [[Double]]] {
@@ -89,7 +99,11 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     private func containsScanFilter(scanFilter: [RFD_SCAN_FILTER], bleName: String) -> Bool {
-        return scanFilter.contains { bleName.contains($0.rawValue) }
+        if scanFilter.isEmpty {
+            return true
+        } else {
+            return scanFilter.contains { bleName.contains($0.rawValue) }
+        }
     }
     
     // MARK: - Bluetooth Permission
@@ -143,7 +157,8 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                 let bleTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
                 let validTime = self.bleValidTime*2
                 
-                if RSSI.intValue != 127 {
+                let RSSIIntValue = RSSI.intValue
+                if RSSIIntValue != 127 && RSSIIntValue >= self.minRSSIThreshold && RSSIIntValue <= self.maxRSSIThreshold {
                     let condition: ((String, [[Double]])) -> Bool = {
                         $0.0.contains(bleName)
                     }
@@ -161,7 +176,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
                     } else {
                         bleScanned.updateValue([[rssiValue, bleTime]], forKey: bleName)
                     }
-                    let trimmedResult = RFDFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, validTime: validTime)
+                    let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleScanned, nowTime: bleTime, validTime: validTime)
                     switch trimmedResult {
                     case .success(let trimmedData):
                         self.bleDictionary = trimmedData
