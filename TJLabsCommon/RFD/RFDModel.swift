@@ -10,9 +10,16 @@ struct BLEConstants {
     static let BASE_UUID            = "-0000-1000-8000-00805f9b34fb"
 }
 
-public enum RFD_SCAN_FILTER: String {
+enum RFD_SCAN_FILTER: String {
     case TJ = "TJ-"
     case NI = "NI-"
+}
+
+public enum SCAN_MODE {
+    case NO_FILTER_SCAN
+    case ONLY_WARD_SCAN
+    case ONLY_SEI_SCAN
+    case WARD_SEI_SCAN
 }
 
 // MARK: - Enums
@@ -43,5 +50,5 @@ public struct ReceivedForce: Encodable {
 
 // MARK: - Protocol
 public protocol RFDGeneratorDelegate: AnyObject {
-    func didGenerateReceivedForce(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
+    func onRFDResult(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
 }
