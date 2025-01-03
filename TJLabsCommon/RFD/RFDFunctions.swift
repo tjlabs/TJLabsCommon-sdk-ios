@@ -3,13 +3,13 @@ import Foundation
 public class RFDFunctions: NSObject {
     public static let shared = RFDFunctions()
 
-    public func getBleChannelNum(bleAvg: [String: Double]?) -> Int {
+    public func getBleChannelNum(bleAvg: [String: Double]?, threshold: Double = -95.0) -> Int {
         var numChannels: Int = 0
         if let bleAvgData = bleAvg {
             for key in bleAvgData.keys {
                 let bleRssi: Double = bleAvgData[key] ?? -100.0
                 
-                if (bleRssi > -95.0) {
+                if (bleRssi > threshold) {
                     numChannels += 1
                 }
             }
@@ -18,7 +18,7 @@ public class RFDFunctions: NSObject {
         return numChannels
     }
 
-//    func getLatestBleData(bleDictionary: [String: [[Double]]]) -> [String: Double] {
+//    public func getLatestBleData(bleDictionary: [String: [[Double]]]) -> [String: Double] {
 //        var ble = [String: Double]()
 //        
 //        let keys: [String] = Array(bleDictionary.keys)
@@ -32,5 +32,4 @@ public class RFDFunctions: NSObject {
 //        }
 //        return ble
 //    }
-
 }
