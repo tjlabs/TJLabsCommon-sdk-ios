@@ -6,22 +6,40 @@ public class RFDGenerator: NSObject {
     var receivedForceTimer: DispatchSourceTimer?
     
     var user_id: String = "Unknown"
-    var scanFilters = [RFD_SCAN_FILTER]()
+    var scanFilters: [RFD_SCAN_FILTER] = [RFD_SCAN_FILTER.TJ]
     var timerInterval: TimeInterval = 1/2
-    var bleValidTime: Double = 0
+    var bleScanWindowTime: Double = 0
     
     public weak var delegate: RFDGeneratorDelegate?
+    public var pressureProvider: () -> Double = { 0 }
     
-    public init(id: String, scanFilter: [RFD_SCAN_FILTER], interval: TimeInterval) {
+    public init(id: String) {
         self.user_id = id
-        self.scanFilters = scanFilter
-        self.timerInterval = interval
-        self.bleValidTime = bleManager.getBluetoothValidTime()
     }
     
-    public func start() -> (Bool, String) {
+    public func setScanMode(scanMode: SCAN_MODE) {
+        switch (scanMode) {
+        case .NO_FILTER_SCAN:
+            self.scanFilters = []
+        case .ONLY_WARD_SCAN:
+            self.scanFilters = [RFD_SCAN_FILTER.TJ]
+        case .ONLY_SEI_SCAN:
+            self.scanFilters = [RFD_SCAN_FILTER.NI]
+        case .WARD_SEI_SCAN:
+            self.scanFilters = [RFD_SCAN_FILTER.TJ, RFD_SCAN_FILTER.NI]
+        }
+    }
+    
+    public func generateRFD(RFDInterval: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) -> (Bool, String) {
         let initBLE = bleManager.startScan(scanFilter: self.scanFilters)
         if initBLE.0 {
+            self.timerInterval = RFDInterval
+            self.bleScanWindowTime = bleScanWindowTimeMillis
+            
+            bleManager.setBleScanWindowTime(value: bleScanWindowTimeMillis)
+            bleManager.setMinRssiThreshold(value: minRssiThreshold)
+            bleManager.setMaxRssiThreshold(value: maxRssiThreshold)
+            
             startTimer()
             return initBLE
         } else {
@@ -29,16 +47,17 @@ public class RFDGenerator: NSObject {
         }
     }
     
-    public func stop() {
+    public func stopRFDGeneration() {
+        bleManager.stopScan()
         stopTimer()
     }
     
-    public func setBluetoothValidTime(value: Double) {
-        self.bleManager.setBluetoothValidTime(value: value)
+    public func setBleScanWindowTime(value: Double) {
+        self.bleManager.setBleScanWindowTime(value: value)
     }
     
-    public func getBluetoothValidTime() -> Double {
-        return self.bleManager.getBluetoothValidTime()
+    public func getBleScanWindowTime() -> Double {
+        return self.bleManager.getBleScanWindowTime()
     }
     
     public func getWardLastScanTime() -> Double {
@@ -66,19 +85,20 @@ public class RFDGenerator: NSObject {
     func receivedForceTimerUpdate() {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         let bleDictionary = bleManager.getBLEDictionary()
-        let trimmedResult = RFDFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, validTime: self.bleValidTime)
+        let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, scanWindowTime: self.bleScanWindowTime)
         
         let data: ReceivedForce
         var info = RFDInfo.success
         switch trimmedResult {
         case .success(let trimmedBLE):
-            let bleAvg = RFDFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
-            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: bleAvg, pressure: 0)
+            let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
+            let pressureValue = pressureProvider()
+            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: bleAvg, pressure: pressureValue)
         case .failure(_):
             data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
             info = .fail
         }
         
-        delegate?.didGenerateReceivedForce(self, receivedForce: data, info: info)
+        delegate?.onRFDResult(self, receivedForce: data, info: info)
     }
 }
