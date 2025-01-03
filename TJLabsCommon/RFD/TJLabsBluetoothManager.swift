@@ -30,7 +30,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     var waitTimer: Timer? = nil
     var waitTimerCounter: Int = 0
 
-    var scanFilters = [RFD_SCAN_FILTER]()
+    var scanFilters = [RfdScanFilter]()
     var bleDictionary = [String: [[Double]]]()
     
     var bleLastScannedTime: Double = 0
@@ -69,7 +69,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         return self.bleDictionary
     }
     
-    func startScan(scanFilter: [RFD_SCAN_FILTER]) -> (Bool, String) {
+    func startScan(scanFilter: [RfdScanFilter]) -> (Bool, String) {
         let localTime: String = TJLabsUtilFunctions.shared.getLocalTimeString()
         let message: String = localTime + " , " + CommonConstants.COMMON_HEADER
         
@@ -94,11 +94,11 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         self.centralManager.stopScan()
         self.isScanning = false
         self.bleDictionary = [String: [[Double]]]()
-        self.scanFilters = [RFD_SCAN_FILTER]()
+        self.scanFilters = [RfdScanFilter]()
         NotificationCenter.default.post(name: .tjlabsStopScan, object: nil)
     }
     
-    private func containsScanFilter(scanFilter: [RFD_SCAN_FILTER], bleName: String) -> Bool {
+    private func containsScanFilter(scanFilter: [RfdScanFilter], bleName: String) -> Bool {
         if scanFilter.isEmpty {
             return true
         } else {

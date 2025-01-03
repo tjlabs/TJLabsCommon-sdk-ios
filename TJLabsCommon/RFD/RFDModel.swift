@@ -10,12 +10,12 @@ struct BLEConstants {
     static let BASE_UUID            = "-0000-1000-8000-00805f9b34fb"
 }
 
-enum RFD_SCAN_FILTER: String {
+enum RfdScanFilter: String {
     case TJ = "TJ-"
     case NI = "NI-"
 }
 
-public enum SCAN_MODE {
+public enum ScanMode {
     case NO_FILTER_SCAN
     case ONLY_WARD_SCAN
     case ONLY_SEI_SCAN

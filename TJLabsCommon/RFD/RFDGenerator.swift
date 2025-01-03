@@ -6,7 +6,7 @@ public class RFDGenerator: NSObject {
     var receivedForceTimer: DispatchSourceTimer?
     
     var user_id: String = "Unknown"
-    var scanFilters: [RFD_SCAN_FILTER] = [RFD_SCAN_FILTER.TJ]
+    var scanFilters: [RfdScanFilter] = [RfdScanFilter.TJ]
     var timerInterval: TimeInterval = 1/2
     var bleScanWindowTime: Double = 0
     
@@ -17,16 +17,16 @@ public class RFDGenerator: NSObject {
         self.user_id = id
     }
     
-    public func setScanMode(scanMode: SCAN_MODE) {
+    public func setScanMode(scanMode: ScanMode) {
         switch (scanMode) {
         case .NO_FILTER_SCAN:
             self.scanFilters = []
         case .ONLY_WARD_SCAN:
-            self.scanFilters = [RFD_SCAN_FILTER.TJ]
+            self.scanFilters = [RfdScanFilter.TJ]
         case .ONLY_SEI_SCAN:
-            self.scanFilters = [RFD_SCAN_FILTER.NI]
+            self.scanFilters = [RfdScanFilter.NI]
         case .WARD_SEI_SCAN:
-            self.scanFilters = [RFD_SCAN_FILTER.TJ, RFD_SCAN_FILTER.NI]
+            self.scanFilters = [RfdScanFilter.TJ, RfdScanFilter.NI]
         }
     }
     
