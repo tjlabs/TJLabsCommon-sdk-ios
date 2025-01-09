@@ -52,17 +52,14 @@ public class RFDGenerator: NSObject {
         stopTimer()
     }
     
-    public func setBleScanWindowTime(value: Double) {
-        self.bleManager.setBleScanWindowTime(value: value)
-    }
-    
-    public func getBleScanWindowTime() -> Double {
-        return self.bleManager.getBleScanWindowTime()
-    }
-    
-    public func getWardLastScanTime() -> Double {
-        return self.bleManager.getWardLastScanTime()
-    }
+    // Hide //
+//    public func getBleScanWindowTime() -> Double {
+//        return self.bleManager.getBleScanWindowTime()
+//    }
+//    
+//    public func getWardLastScanTime() -> Double {
+//        return self.bleManager.getWardLastScanTime()
+//    }
     
     func startTimer() {
         if (self.receivedForceTimer == nil) {
