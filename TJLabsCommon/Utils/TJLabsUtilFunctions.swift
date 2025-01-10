@@ -78,10 +78,6 @@ public class TJLabsUtilFunctions: NSObject {
         return movingAverage(preAvgValue: preEMA, curValue: curValue, windowSize: windowSize)
     }
 
-    public func calAngleOfRotation(timeInterval: Double, angularVelocity: Double) -> Double {
-        return angularVelocity * timeInterval * 1e-3
-    }
-
     public func degree2radian(degree: Double) -> Double {
         return degree * .pi / 180
     }
@@ -91,16 +87,6 @@ public class TJLabsUtilFunctions: NSObject {
     }
 
     // MARK: - private
-    func callRollUsingAcc(acc: [Double]) -> Double {
-        let (x, y, z) = (acc[0], acc[1], acc[2])
-        return atan2(x, sqrt(y * y + z * z)) + (z < 0 ? (x > 0 ? -.pi : .pi) : 0)
-    }
-
-    func callPitchUsingAcc(acc: [Double]) -> Double {
-        let (x, y, z) = (acc[0], acc[1], acc[2])
-        return atan2(y, sqrt(x * x + z * z))
-    }
-
     func calAttEMA(preAttEMA: Attitude, curAtt: Attitude, windowSize: Int) -> Attitude {
         return Attitude(
             roll: exponentialMovingAverage(preEMA: preAttEMA.roll, curValue: curAtt.roll, windowSize: windowSize),
@@ -117,8 +103,125 @@ public class TJLabsUtilFunctions: NSObject {
             norm: exponentialMovingAverage(preEMA: preArrayEMA.norm, curValue: curArray.norm, windowSize: windowSize)
         )
     }
-
+    
+    func getOrientation(rotationMatrix: [[Double]]) -> [Double] {
+        var orientation = [Double](repeating: 0, count: 3)
+        orientation[0] = atan2(rotationMatrix[0][1], rotationMatrix[1][1])
+        orientation[1] = asin(-rotationMatrix[2][1])
+        orientation[2] = atan2(-rotationMatrix[2][0], rotationMatrix[2][2])
+        
+        return orientation
+    }
+    
+    func getRotationMatrixFromVector(rotationVector: [Double], returnSize: Int) -> [[Double]] {
+        var rotationMatrix = [[Double]](repeating: [Double](repeating: 0, count: 4), count: 4)
+        
+        let q1: Double = rotationVector[0]
+        let q2: Double = rotationVector[1]
+        let q3: Double = rotationVector[2]
+        let q0: Double = rotationVector[3]
+        
+        let sqq1 = 2 * q1 * q1
+        let sqq2 = 2 * q2 * q2
+        let sqq3 = 2 * q3 * q3
+        let q1q2 = 2 * q1 * q2
+        let q3q0 = 2 * q3 * q0
+        let q1q3 = 2 * q1 * q3
+        let q2q0 = 2 * q2 * q0
+        let q2q3 = 2 * q2 * q3
+        let q1q0 = 2 * q1 * q0
+        
+        if returnSize == 16 {
+            rotationMatrix[0][0] = 1 - sqq2 - sqq3
+            rotationMatrix[0][1] = q1q2 - q3q0
+            rotationMatrix[0][2] = q1q3 + q2q0
+            
+            rotationMatrix[1][0] = q1q2 + q3q0
+            rotationMatrix[1][1] = 1 - sqq1 - sqq3
+            rotationMatrix[1][2] = q2q3 - q1q0
+            
+            rotationMatrix[2][0] = q1q3 - q2q0
+            rotationMatrix[2][1] = q2q3 + q1q0
+            rotationMatrix[2][2] = 1 - sqq1 - sqq2
+            
+            rotationMatrix[3][3] = 1
+        } else if returnSize == 9 {
+            rotationMatrix[0][0] = 1 - sqq2 - sqq3
+            rotationMatrix[0][1] = q1q2 - q3q0
+            rotationMatrix[0][2] = q1q3 + q2q0
+            
+            rotationMatrix[1][0] = q1q2 + q3q0
+            rotationMatrix[1][1] = 1 - sqq1 - sqq3
+            rotationMatrix[1][2] = q2q3 - q1q0
+            
+            rotationMatrix[2][0] = q1q3 - q2q0
+            rotationMatrix[2][1] = q2q3 + q1q0
+            rotationMatrix[2][2] = 1 - sqq1 - sqq2
+        }
+        
+        return rotationMatrix
+    }
+    
     func l2Normalize(originalVector: [Double]) -> Double {
         return sqrt(originalVector.reduce(0) { $0 + $1 * $1 })
+    }
+    
+    func calAngleOfRotation(timeInterval: Double, angularVelocity: Double) -> Double {
+        return angularVelocity * Double(timeInterval) * 1e-3
+    }
+    
+    func callRollUsingAcc(acc: [Double]) -> Double {
+        let (x, y, z) = (acc[0], acc[1], acc[2])
+        return atan2(x, sqrt(y * y + z * z)) + (z < 0 ? (x > 0 ? -.pi : .pi) : 0)
+    }
+
+    func callPitchUsingAcc(acc: [Double]) -> Double {
+        let (x, y, z) = (acc[0], acc[1], acc[2])
+        return atan2(y, sqrt(x * x + z * z))
+    }
+    
+    func calAttitudeUsingGameVector(gameVec: [Double]) -> Attitude {
+        let rotationMatrix = getRotationMatrixFromVector(rotationVector: gameVec, returnSize: 9)
+        let vecOrientation = getOrientation(rotationMatrix: rotationMatrix)
+        return Attitude(roll: vecOrientation[2], pitch: -vecOrientation[1], yaw: -vecOrientation[0])
+    }
+    
+    func calAttitudeUsingRotMatrix(rotationMatrix: [[Double]]) -> Attitude {
+        let vecOrientation = getOrientation(rotationMatrix: rotationMatrix)
+        return Attitude(roll: vecOrientation[2], pitch: -vecOrientation[1], yaw: -vecOrientation[0])
+    }
+    
+    func transBody2Nav(att: Attitude, data: [Double]) -> [Double] {
+        return rotationXY(roll: -att.roll, pitch: -att.pitch, gyro: data)
+    }
+    
+    func rotationXY(roll: Double, pitch: Double, gyro: [Double]) -> [Double] {
+        var rotationMatrix = [[Double]](repeating: [Double](repeating: 0, count: 3), count: 3)
+        var processedGyro = [Double](repeating: 0, count: 3)
+        
+        let gx = gyro[0]
+        let gy = gyro[1]
+        let gz = gyro[2]
+        
+        rotationMatrix[0][0] = cos(roll)
+        rotationMatrix[0][1] = 0
+        rotationMatrix[0][2] = -sin(roll)
+
+        rotationMatrix[1][0] = sin(roll) * sin(pitch)
+        rotationMatrix[1][1] = 0
+        rotationMatrix[1][2] = cos(roll) * sin(pitch)
+
+        rotationMatrix[2][0] = cos(pitch) * sin(roll)
+        rotationMatrix[2][1] = -sin(pitch)
+        rotationMatrix[2][2] = cos(pitch) * cos(roll)
+        
+        processedGyro[0] =
+        (gx * rotationMatrix[0][0]) + (gy * rotationMatrix[0][1]) + (gz * rotationMatrix[0][2])
+        processedGyro[1] =
+        (gx * rotationMatrix[1][0]) + (gy * rotationMatrix[1][1]) + (gz * rotationMatrix[1][2])
+        processedGyro[2] =
+        (gx * rotationMatrix[2][0]) + (gy * rotationMatrix[2][1]) + (gz * rotationMatrix[2][2])
+        
+        return processedGyro
     }
 }
