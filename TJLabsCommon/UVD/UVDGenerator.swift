@@ -1,20 +1,24 @@
-
 import Foundation
+
+private let sensorFrequency: Double = 40
 
 public class UVDGenerator: NSObject {
     public weak var delegate: UVDGeneratorDelegate?
-    var sensorManager = TJLabsSensorManager()
-    var userVelocityTimer: DispatchSourceTimer?
-    var frequency: Double = 40
-    var timerInterval: TimeInterval = 1/40
     
+    var userVelocityTimer: DispatchSourceTimer?
+    var timerInterval: TimeInterval = 1/sensorFrequency
     var userId: String = "Unknown"
-    var uvdGenerationTimeMillis: Int = 0
+    
+    var sensorManager = TJLabsSensorManager()
+    var attitudeEstimator = TJLabsAttitudeEstimator(frequency: sensorFrequency)
+    var pdrDistanceEstimator = TJLabsPDRDistanceEstiamtor()
+    var unitStatusEstimator = TJLabsUnitStatusEstimator()
+    var uvdGenerationTimeMillis: Double = 0
     var userMode = UserMode.MODE_PEDESTRIAN
+    var drVelocityScale: Double = 1.0
     
     public init(userId: String) {
         self.userId = userId
-        self.timerInterval = 1/self.frequency
     }
     
     public func setUserMode(mode: UserMode) {
@@ -25,8 +29,8 @@ public class UVDGenerator: NSObject {
         // TODO
     }
     
-    func resetZeroVelocityAfterSeconds(velocity: Double, sec: Int = 2) -> Double {
-        return TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds() - self.uvdGenerationTimeMillis < sec*1000 ? velocity : 0
+    func resetZeroVelocityAfterSeconds(velocity: Double, sec: Double = 2) -> Double {
+        return TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble() - self.uvdGenerationTimeMillis < sec*1000 ? velocity : 0
     }
     
     public func generateUvd(defaultPDRStepLength: Double = 0.5, minPDRStepLength: Double = 0.5, maxPDRStepLength: Double = 0.7) -> (Bool, String) {
@@ -40,11 +44,28 @@ public class UVDGenerator: NSObject {
     }
     
     public func stopUvdGeneration() {
-        
+        stopTimer()
+        attitudeEstimator = TJLabsAttitudeEstimator(frequency: sensorFrequency)
+        pdrDistanceEstimator = TJLabsPDRDistanceEstiamtor()
+        unitStatusEstimator = TJLabsUnitStatusEstimator()
+        uvdGenerationTimeMillis = 0
+        userMode = UserMode.MODE_PEDESTRIAN
+        drVelocityScale = 1.0
     }
     
-    func generatePedestrainUvd() {
+    func generatePedestrainUvd(sensorData: SensorData) {
+        let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
+        let pdrUnit = pdrDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
+        let attDegree = attitudeEstimator.estimateAttitudeRadian(time: currentTime, acc: sensorData.acc, gyro: sensorData.gyro, rotMatrix: sensorData.rotationMatrix).toDegree()
+        let isLookingStatus = unitStatusEstimator.estimateStatus(Attitude: attDegree, isIndexChanged: pdrUnit.isIndexChanged)
         
+        if pdrUnit.isIndexChanged {
+            let userVelocity = UserVelocity(user_id: self.userId, mobile_time: TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds(), index: pdrUnit.index, length: pdrUnit.length, heading: attDegree.yaw, looking: isLookingStatus)
+            delegate?.onUvdResult(self, userVelocity: userVelocity)
+            uvdGenerationTimeMillis = currentTime
+        } else {
+            delegate?.onUvdPauseMillis(self, time: currentTime - uvdGenerationTimeMillis)
+        }
     }
     
     func generateVehicleUvd() {
@@ -75,16 +96,14 @@ public class UVDGenerator: NSObject {
     
     func userVelocityTimerUpdate() {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-
         let sensorData = sensorManager.getSensorData()
         switch self.userMode {
         case .MODE_PEDESTRIAN:
-            print("GG")
+            self.generatePedestrainUvd(sensorData: sensorData)
         case .MODE_VEHICLE:
             print("GG")
         case .MODE_AUTO:
             print("GG")
         }
-//        delegate?.onRFDResult(self, receivedForce: data, info: info)
     }
 }
