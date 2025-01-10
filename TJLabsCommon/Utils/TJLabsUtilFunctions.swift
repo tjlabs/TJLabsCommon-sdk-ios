@@ -103,9 +103,9 @@ public class TJLabsUtilFunctions: NSObject {
 
     func calAttEMA(preAttEMA: Attitude, curAtt: Attitude, windowSize: Int) -> Attitude {
         return Attitude(
-            Roll: exponentialMovingAverage(preEMA: preAttEMA.Roll, curValue: curAtt.Roll, windowSize: windowSize),
-            Pitch: exponentialMovingAverage(preEMA: preAttEMA.Pitch, curValue: curAtt.Pitch, windowSize: windowSize),
-            Yaw: exponentialMovingAverage(preEMA: preAttEMA.Yaw, curValue: curAtt.Yaw, windowSize: windowSize)
+            roll: exponentialMovingAverage(preEMA: preAttEMA.roll, curValue: curAtt.roll, windowSize: windowSize),
+            pitch: exponentialMovingAverage(preEMA: preAttEMA.pitch, curValue: curAtt.pitch, windowSize: windowSize),
+            yaw: exponentialMovingAverage(preEMA: preAttEMA.yaw, curValue: curAtt.yaw, windowSize: windowSize)
         )
     }
 
