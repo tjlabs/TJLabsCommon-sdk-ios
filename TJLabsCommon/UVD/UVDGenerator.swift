@@ -29,7 +29,7 @@ public class UVDGenerator: NSObject {
         // TODO
     }
     
-    func resetZeroVelocityAfterSeconds(velocity: Double, sec: Double = 2) -> Double {
+    func resetVelocityAfterSeconds(velocity: Double, sec: Double = 2) -> Double {
         return TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble() - self.uvdGenerationTimeMillis < sec*1000 ? velocity : 0
     }
     
@@ -66,7 +66,7 @@ public class UVDGenerator: NSObject {
         } else {
             delegate?.onUvdPauseMillis(self, time: currentTime - uvdGenerationTimeMillis)
         }
-        delegate?.onVelocityResult(self, kmPh: resetZeroVelocityAfterSeconds(velocity: pdrUnit.velocity))
+        delegate?.onVelocityResult(self, kmPh: resetVelocityAfterSeconds(velocity: pdrUnit.velocity))
     }
     
     func generateVehicleUvd() {
