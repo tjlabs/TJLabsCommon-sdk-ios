@@ -27,11 +27,7 @@ class TJLabsUnitStatusEstimator: NSObject {
                 if (value) { bufferSum += 1 }
             }
 
-            if bufferSum < lookingFlagCheckIndexSize {
-                return false
-            } else {
-                return true
-            }
+            return bufferSum >= (lookingFlagCheckIndexSize-1) ? true : false
         }
     }
     
