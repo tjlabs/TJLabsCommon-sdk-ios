@@ -65,13 +65,7 @@ class TJLabsAttitudeEstimator: NSObject {
         }
         
         // 누적된 회줜 값으로 현재 Attitude 계산
-        let curAttitudeOrigin = Attitude(roll: gameVecAttEMA.roll, pitch: gameVecAttEMA.pitch, yaw: headingGyroGame)
         let curAttitude = Attitude(roll: accAttEMA.roll, pitch: accAttEMA.pitch, yaw: headingGyroAcc)
-        
-        let rollA = TJLabsUtilFunctions.shared.radian2degree(radian: curAttitude.roll)
-        let pitchA = TJLabsUtilFunctions.shared.radian2degree(radian: curAttitude.pitch)
-        let yawA = TJLabsUtilFunctions.shared.radian2degree(radian: curAttitude.yaw)
-        
         preGameVecAttEMA = gameVecAttEMA
         preAccAttEMA = accAttEMA
         timeBefore = time
