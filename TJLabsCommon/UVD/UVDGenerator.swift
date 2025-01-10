@@ -5,6 +5,7 @@ public class UVDGenerator: NSObject {
     public weak var delegate: UVDGeneratorDelegate?
     var sensorManager = TJLabsSensorManager()
     var userVelocityTimer: DispatchSourceTimer?
+    var frequency: Double = 40
     var timerInterval: TimeInterval = 1/40
     
     var userId: String = "Unknown"
@@ -13,6 +14,7 @@ public class UVDGenerator: NSObject {
     
     public init(userId: String) {
         self.userId = userId
+        self.timerInterval = 1/self.frequency
     }
     
     public func setUserMode(mode: UserMode) {
