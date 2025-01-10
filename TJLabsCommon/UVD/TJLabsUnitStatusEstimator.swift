@@ -18,7 +18,7 @@ class TJLabsUnitStatusEstimator: NSObject {
     }
     
     func checkLookingAttitude(lookingFlagStepQueue: LinkedList<Bool>) -> Bool {
-        if (lookingFlagStepQueue.count <= 2) {
+        if (lookingFlagStepQueue.count < lookingFlagCheckIndexSize) {
             return true
         } else {
             var bufferSum = 0
