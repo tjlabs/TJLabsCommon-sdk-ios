@@ -7,12 +7,12 @@ public class UVDGenerator: NSObject {
     var userVelocityTimer: DispatchSourceTimer?
     var timerInterval: TimeInterval = 1/40
     
-    var user_id: String = "Unknown"
-    var uvdGenerationTimeMillis: Double = 0
+    var userId: String = "Unknown"
+    var uvdGenerationTimeMillis: Int = 0
     var userMode = UserMode.MODE_PEDESTRIAN
     
-    public init(id: String) {
-        self.user_id = id
+    public init(userId: String) {
+        self.userId = userId
     }
     
     public func setUserMode(mode: UserMode) {
@@ -23,9 +23,8 @@ public class UVDGenerator: NSObject {
         // TODO
     }
     
-    
-    func getZeroVelocityAfterSeconds() -> Double {
-        return 0
+    func resetZeroVelocityAfterSeconds(velocity: Double, sec: Int = 2) -> Double {
+        return TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds() - self.uvdGenerationTimeMillis < sec*1000 ? velocity : 0
     }
     
     public func generateUvd(defaultPDRStepLength: Double = 0.5, minPDRStepLength: Double = 0.5, maxPDRStepLength: Double = 0.7) -> (Bool, String) {
