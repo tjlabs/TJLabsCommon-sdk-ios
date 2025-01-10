@@ -26,11 +26,11 @@ class TJLabsUnitStatusEstimator: NSObject {
                 let value = lookingFlagStepQueue.node(at: i)!.value
                 if (value) { bufferSum += 1 }
             }
-            
-            if (bufferSum >= 2) {
-                return true
-            } else {
+
+            if bufferSum < lookingFlagCheckIndexSize {
                 return false
+            } else {
+                return true
             }
         }
     }
