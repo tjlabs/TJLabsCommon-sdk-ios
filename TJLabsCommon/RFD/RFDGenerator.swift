@@ -5,7 +5,7 @@ public class RFDGenerator: NSObject {
     let bleManager = TJLabsBluetoothManager()
     var receivedForceTimer: DispatchSourceTimer?
     
-    var user_id: String = "Unknown"
+    var userId: String = "Unknown"
     var scanFilters: [RfdScanFilter] = [RfdScanFilter.TJ]
     var timerInterval: TimeInterval = 1/2
     var bleScanWindowTime: Double = 0
@@ -13,8 +13,8 @@ public class RFDGenerator: NSObject {
     public weak var delegate: RFDGeneratorDelegate?
     public var pressureProvider: () -> Double = { 0 }
     
-    public init(id: String) {
-        self.user_id = id
+    public init(userId: String) {
+        self.userId = userId
     }
     
     public func setScanMode(scanMode: ScanMode) {
@@ -30,10 +30,10 @@ public class RFDGenerator: NSObject {
         }
     }
     
-    public func generateRFD(RFDInterval: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) -> (Bool, String) {
+    public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) -> (Bool, String) {
         let initBLE = bleManager.startScan(scanFilter: self.scanFilters)
         if initBLE.0 {
-            self.timerInterval = RFDInterval
+            self.timerInterval = rfdIntervalMillis
             self.bleScanWindowTime = bleScanWindowTimeMillis
             
             bleManager.setBleScanWindowTime(value: bleScanWindowTimeMillis)
@@ -47,7 +47,7 @@ public class RFDGenerator: NSObject {
         }
     }
     
-    public func stopRFDGeneration() {
+    public func stopRfdGeneration() {
         bleManager.stopScan()
         stopTimer()
     }
@@ -63,8 +63,8 @@ public class RFDGenerator: NSObject {
     
     func startTimer() {
         if (self.receivedForceTimer == nil) {
-            let queueRFD = DispatchQueue(label: Bundle.main.bundleIdentifier! + ".receivedForceTimer")
-            self.receivedForceTimer = DispatchSource.makeTimerSource(queue: queueRFD)
+            let queueRfd = DispatchQueue(label: Bundle.main.bundleIdentifier! + ".receivedForceTimer")
+            self.receivedForceTimer = DispatchSource.makeTimerSource(queue: queueRfd)
             self.receivedForceTimer!.schedule(deadline: .now(), repeating: timerInterval)
             self.receivedForceTimer!.setEventHandler { [weak self] in
                 guard let self = self else { return }
@@ -90,12 +90,12 @@ public class RFDGenerator: NSObject {
         case .success(let trimmedBLE):
             let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
             let pressureValue = pressureProvider()
-            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: bleAvg, pressure: pressureValue)
+            data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: bleAvg, pressure: pressureValue)
         case .failure(_):
-            data = ReceivedForce(user_id: self.user_id, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
+            data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
             info = .fail
         }
         
-        delegate?.onRFDResult(self, receivedForce: data, info: info)
+        delegate?.onRfdResult(self, receivedForce: data, info: info)
     }
 }

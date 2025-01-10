@@ -50,5 +50,5 @@ public struct ReceivedForce: Encodable {
 
 // MARK: - Protocol
 public protocol RFDGeneratorDelegate: AnyObject {
-    func onRFDResult(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
+    func onRfdResult(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
 }
