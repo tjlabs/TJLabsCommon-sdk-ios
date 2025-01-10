@@ -7,9 +7,9 @@ class TJLabsUnitStatusEstimator: NSObject {
     var lookingFlagStepQueue = LinkedList<Bool>()
     let lookingFlagCheckIndexSize: Int = 3
     
-    func estimateStatus(Attitude: Attitude, isIndexChanged: Bool) -> Bool {
+    func estimateStatus(attDegree: Attitude, isIndexChanged: Bool) -> Bool {
         if (isIndexChanged) {
-            let isLookingAttitude = (abs(Attitude.roll) < TJLabsUtilFunctions.shared.degree2radian(degree: 25) && Attitude.pitch > TJLabsUtilFunctions.shared.degree2radian(degree: -20) && Attitude.pitch < TJLabsUtilFunctions.shared.degree2radian(degree: 80))
+            let isLookingAttitude = (abs(attDegree.roll) < 25 && attDegree.pitch > -20 && attDegree.pitch < 80)
             updateIsLookingAttitudeQueue(lookingFlag: isLookingAttitude)
             return checkLookingAttitude(lookingFlagStepQueue: lookingFlagStepQueue)
         } else {
