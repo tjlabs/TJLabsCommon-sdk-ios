@@ -57,7 +57,7 @@ public class UVDGenerator: NSObject {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         let pdrUnit = pdrDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
         let attDegree = attitudeEstimator.estimateAttitudeRadian(time: currentTime, acc: sensorData.acc, gyro: sensorData.gyro, rotMatrix: sensorData.rotationMatrix).toDegree()
-        let isLookingStatus = unitStatusEstimator.estimateStatus(Attitude: attDegree, isIndexChanged: pdrUnit.isIndexChanged)
+        let isLookingStatus = unitStatusEstimator.estimateStatus(attDegree: attDegree, isIndexChanged: pdrUnit.isIndexChanged)
         
         if pdrUnit.isIndexChanged {
             let userVelocity = UserVelocity(user_id: self.userId, mobile_time: TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds(), index: pdrUnit.index, length: pdrUnit.length, heading: attDegree.yaw, looking: isLookingStatus)
