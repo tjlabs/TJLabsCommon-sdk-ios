@@ -66,6 +66,7 @@ public class UVDGenerator: NSObject {
         } else {
             delegate?.onUvdPauseMillis(self, time: currentTime - uvdGenerationTimeMillis)
         }
+        delegate?.onVelocityResult(self, kmPh: resetZeroVelocityAfterSeconds(velocity: pdrUnit.velocity))
     }
     
     func generateVehicleUvd() {
