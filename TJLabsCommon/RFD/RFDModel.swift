@@ -28,10 +28,24 @@ enum TrimBleDataError: Error {
     case noValidData
 }
 
-public enum RFDInfo {
-    case success
-    case fail
+struct RFDErrorCode {
+    // BLE Hardware
+    let BLUETOOTH_DISABLED = 100
+    let BLUETOOTH_NOT_SUPPORTED = 101
+
+    // BLE Permission
+    let PERMISSION_DENIED = 110
+    let PERMISSION_STATE_CHANGED = 111
+
+    // BLE Scan Result
+    let SCAN_TIMEOUT = 120
+    let INVALID_DEVICE_NAME = 121
+    let INVALID_RSSI = 122
+    
+    // Duplicated RFD Generation Service
+    let DUPLICATE_SCAN_START = 130
 }
+
 
 // MARK: - Structs
 public struct ReceivedForce: Encodable {
@@ -50,5 +64,6 @@ public struct ReceivedForce: Encodable {
 
 // MARK: - Protocol
 public protocol RFDGeneratorDelegate: AnyObject {
-    func onRfdResult(_ generator: RFDGenerator, receivedForce: ReceivedForce, info: RFDInfo)
+    func onRfdResult(_ generator: RFDGenerator, receivedForce: ReceivedForce)
+    func onRfdError(_ generator: RFDGenerator, code: Int, msg: String)
 }
