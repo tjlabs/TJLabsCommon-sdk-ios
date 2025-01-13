@@ -114,6 +114,25 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         return true
     }
     
+    func checkPermission() -> (hasPermission: Bool, message: String) {
+        if #available(iOS 13.1, *) {
+            switch CBCentralManager.authorization {
+            case .allowedAlways:
+                return (true, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth permissions are granted.")
+            case .restricted:
+                return (false, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth usage is restricted on this device.")
+            case .denied:
+                return (false, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth permissions have been denied. Please enable permissions in Settings.")
+            case .notDetermined:
+                return (false, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth permissions have not been determined yet.")
+            @unknown default:
+                return (false, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Unknown Bluetooth authorization state.")
+            }
+        } else {
+            return (true, TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth permissions are granted (iOS version < 13.1).")
+        }
+    }
+    
     // MARK: - CBCentralManagerDelegate
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch (central.state) {
