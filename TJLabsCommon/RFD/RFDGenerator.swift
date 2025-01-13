@@ -30,9 +30,15 @@ public class RFDGenerator: NSObject {
         }
     }
     
-    public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) -> (Bool, String) {
-        let initBLE = bleManager.startScan(scanFilter: self.scanFilters)
-        if initBLE.0 {
+    public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) {
+        let initBLE = bleManager.checkPermission()
+        if !initBLE.hasPermission {
+            delegate?.onRfdError(self, code: RFDErrorCode().PERMISSION_DENIED, msg: initBLE.message)
+            return
+        }
+        
+        let startScanBLE = bleManager.startScan(scanFilter: self.scanFilters)
+        if startScanBLE.0 {
             self.timerInterval = rfdIntervalMillis
             self.bleScanWindowTime = bleScanWindowTimeMillis
             
@@ -41,9 +47,8 @@ public class RFDGenerator: NSObject {
             bleManager.setMaxRssiThreshold(value: maxRssiThreshold)
             
             startTimer()
-            return initBLE
         } else {
-            return initBLE
+            delegate?.onRfdError(self, code: RFDErrorCode().BLUETOOTH_DISABLED, msg: "??")
         }
     }
     
@@ -85,17 +90,23 @@ public class RFDGenerator: NSObject {
         let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, scanWindowTime: self.bleScanWindowTime)
         
         let data: ReceivedForce
-        var info = RFDInfo.success
         switch trimmedResult {
         case .success(let trimmedBLE):
             let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
             let pressureValue = pressureProvider()
             data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: bleAvg, pressure: pressureValue)
-        case .failure(_):
+        case .failure(let error):
             data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
-            info = .fail
+            switch error {
+            case TrimBleDataError.invalidInput:
+                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : invalidInput in RFD trmming")
+            case TrimBleDataError.noValidData:
+                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : noValidData in RFD trmming")
+            default:
+                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : default in RFD trmming")
+            }
         }
         
-        delegate?.onRfdResult(self, receivedForce: data, info: info)
+        delegate?.onRfdResult(self, receivedForce: data)
     }
 }
