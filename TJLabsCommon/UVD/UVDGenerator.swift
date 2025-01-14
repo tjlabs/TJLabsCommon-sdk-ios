@@ -66,6 +66,7 @@ public class UVDGenerator: NSObject {
         } else {
             delegate?.onUvdPauseMillis(self, time: currentTime - uvdGenerationTimeMillis)
         }
+        delegate?.onPressureResult(self, hPa: sensorData.pressure[0])
         delegate?.onVelocityResult(self, kmPh: resetVelocityAfterSeconds(velocity: pdrUnit.velocity))
     }
     
