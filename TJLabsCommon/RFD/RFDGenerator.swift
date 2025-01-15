@@ -86,6 +86,8 @@ public class RFDGenerator: NSObject {
     
     func receivedForceTimerUpdate() {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
+        let rfdTime = currentTime - (bleScanWindowTime/2)
+        
         let bleDictionary = bleManager.getBLEDictionary()
         let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, scanWindowTime: self.bleScanWindowTime)
         
@@ -94,9 +96,9 @@ public class RFDGenerator: NSObject {
         case .success(let trimmedBLE):
             let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
             let pressureValue = pressureProvider()
-            data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: bleAvg, pressure: pressureValue)
+            data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: bleAvg, pressure: pressureValue)
         case .failure(let error):
-            data = ReceivedForce(user_id: self.userId, mobile_time: Int(currentTime), ble: [String: Double](), pressure: 0)
+            data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: [String: Double](), pressure: 0)
             switch error {
             case TrimBleDataError.invalidInput:
                 delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : invalidInput in RFD trmming")
