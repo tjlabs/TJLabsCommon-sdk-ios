@@ -49,10 +49,10 @@ struct RFDErrorCode {
 
 // MARK: - Structs
 public struct ReceivedForce: Encodable {
-    let user_id: String
-    let mobile_time: Int
-    let ble: [String: Double]
-    let pressure: Double
+    public let user_id: String
+    public let mobile_time: Int
+    public let ble: [String: Double]
+    public let pressure: Double
 
     public init(user_id: String, mobile_time: Int, ble: [String: Double], pressure: Double) {
         self.user_id = user_id

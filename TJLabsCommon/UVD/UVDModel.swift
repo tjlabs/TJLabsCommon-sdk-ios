@@ -44,12 +44,12 @@ struct UnitDistance: Equatable {
 }
 
 public struct UserVelocity: Encodable {
-    let user_id: String
-    let mobile_time: Int
-    let index: Int
-    let length: Double
-    let heading: Double
-    let looking: Bool
+    public let user_id: String
+    public let mobile_time: Int
+    public let index: Int
+    public let length: Double
+    public let heading: Double
+    public let looking: Bool
     
     public init(user_id: String, mobile_time: Int, index: Int, length: Double, heading: Double, looking: Bool) {
         self.user_id = user_id
