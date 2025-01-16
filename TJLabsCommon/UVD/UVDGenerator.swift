@@ -37,6 +37,7 @@ public class UVDGenerator: NSObject {
         let initSensors = sensorManager.initSensorManager()
         if initSensors.0 {
             startTimer()
+            print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : start UVD generation")
         } else  {
             delegate?.onUvdError(self, error: initSensors.1)
         }
@@ -50,6 +51,7 @@ public class UVDGenerator: NSObject {
         uvdGenerationTimeMillis = 0
         userMode = UserMode.MODE_PEDESTRIAN
         drVelocityScale = 1.0
+        print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : stop UVD generation")
     }
     
     func generatePedestrainUvd(sensorData: SensorData) {
