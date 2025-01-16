@@ -100,7 +100,7 @@ public class RFDGenerator: NSObject {
                 }
             }
         } else {
-            let bleLastScannedTime = bleManager.bleLastScannedTime
+            let bleLastScannedTime = (currentTime - bleManager.bleLastScannedTime)*1e-3
             if (bleLastScannedTime >= 6) {
                 // 스캔이 동작안한지 6초 이상 지남
                 delegate?.onRfdError(self, code: RFDErrorCode().SCAN_TIMEOUT, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth Scan Stop")
