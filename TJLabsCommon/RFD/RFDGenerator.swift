@@ -10,6 +10,11 @@ public class RFDGenerator: NSObject {
     var timerInterval: TimeInterval = 1/2
     var bleScanWindowTime: Double = 0
     
+    // Bluetooth Observing Variables
+    let BLE_OFF_THRESHOLD: Double = 4
+    private var timeBleOff: Double = 0
+    private var isBleOff: Bool = false
+    
     public weak var delegate: RFDGeneratorDelegate?
     public var pressureProvider: () -> Double = { 0 }
     
@@ -34,24 +39,13 @@ public class RFDGenerator: NSObject {
     }
     
     public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) {
-        let initBLE = bleManager.checkPermission()
-        if !initBLE.hasPermission {
-            delegate?.onRfdError(self, code: RFDErrorCode().PERMISSION_DENIED, msg: initBLE.message)
-            return
-        }
-        
-        let startScanBLE = bleManager.startScan(scanFilter: self.scanFilters)
-        if startScanBLE.0 {
-            self.timerInterval = rfdIntervalMillis
-            self.bleScanWindowTime = bleScanWindowTimeMillis
-            bleManager.setBleScanWindowTime(value: bleScanWindowTimeMillis)
-            bleManager.setMinRssiThreshold(value: minRssiThreshold)
-            bleManager.setMaxRssiThreshold(value: maxRssiThreshold)
-            startTimer()
-            print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : start RFD generation")
-        } else {
-            delegate?.onRfdError(self, code: RFDErrorCode().BLUETOOTH_DISABLED, msg: "??")
-        }
+        self.timerInterval = rfdIntervalMillis
+        self.bleScanWindowTime = bleScanWindowTimeMillis
+        bleManager.setBleScanWindowTime(value: bleScanWindowTimeMillis)
+        bleManager.setMinRssiThreshold(value: minRssiThreshold)
+        bleManager.setMaxRssiThreshold(value: maxRssiThreshold)
+        startTimer()
+        print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : start RFD generation")
     }
     
     public func stopRfdGeneration() {
@@ -87,7 +81,35 @@ public class RFDGenerator: NSObject {
         self.receivedForceTimer = nil
     }
     
+    func checkBluetoothState() {
+        let currentTime: Double = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
+        if !bleManager.bluetoothReady {
+            let permission = bleManager.checkPermission()
+            if !permission.hasPermission {
+                // No Permmission
+                delegate?.onRfdError(self, code: RFDErrorCode().PERMISSION_DENIED, msg: permission.message)
+            } else {
+                // Check BLE OFF
+                self.timeBleOff += self.timerInterval
+                if (self.timeBleOff >= BLE_OFF_THRESHOLD) {
+                    if (!self.isBleOff) {
+                        self.isBleOff = true
+                        self.timeBleOff = 0
+                        delegate?.onRfdError(self, code: RFDErrorCode().BLUETOOTH_DISABLED, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth OFF")
+                    }
+                }
+            }
+        } else {
+            let bleLastScannedTime = bleManager.bleLastScannedTime
+            if (bleLastScannedTime >= 6) {
+                // 스캔이 동작안한지 6초 이상 지남
+                delegate?.onRfdError(self, code: RFDErrorCode().SCAN_TIMEOUT, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Bluetooth Scan Stop")
+            }
+        }
+    }
+    
     func receivedForceTimerUpdate() {
+        self.checkBluetoothState()
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         let rfdTime = currentTime - (bleScanWindowTime/2)
         
