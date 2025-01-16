@@ -61,7 +61,7 @@ public struct UserVelocity: Encodable {
     }
 }
 
-public enum UserMode{
+public enum UserMode: Codable {
     case MODE_PEDESTRIAN, MODE_VEHICLE, MODE_AUTO
 }
 
