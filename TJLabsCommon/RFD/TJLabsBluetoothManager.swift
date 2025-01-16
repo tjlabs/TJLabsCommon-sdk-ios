@@ -30,7 +30,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     var waitTimer: Timer? = nil
     var waitTimerCounter: Int = 0
 
-    var scanFilters = [RfdScanFilter]()
+    var scanFilters: [RfdScanFilter] = [RfdScanFilter.TJ]
     var bleDictionary = [String: [[Double]]]()
     
     var bleLastScannedTime: Double = 0
@@ -69,6 +69,10 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         return self.bleDictionary
     }
     
+    func setScanFilters(scanFilter: [RfdScanFilter]) {
+        self.scanFilters = scanFilter
+    }
+    
     func startScan(scanFilter: [RfdScanFilter]) -> (Bool, String) {
         let localTime: String = TJLabsUtilFunctions.shared.getLocalTimeString()
         let message: String = localTime + " , " + CommonConstants.COMMON_HEADER
@@ -78,9 +82,9 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         }
         
         if bluetoothReady {
+            self.scanFilters = scanFilter
             self.centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey : NSNumber(value: true as Bool)])
             self.isScanning = true
-            self.scanFilters = scanFilter
             NotificationCenter.default.post(name: .tjlabsStartScan, object: nil)
             let succssMessage = message + " Success : Bluetooth Initialization"
             return (true, succssMessage)
@@ -102,7 +106,12 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         if scanFilter.isEmpty {
             return true
         } else {
-            return scanFilter.contains { bleName.contains($0.rawValue) }
+            for filter in scanFilter {
+                if bleName.contains(filter.rawValue) {
+                    return true
+                }
+            }
+            return false
         }
     }
     
@@ -167,7 +176,7 @@ class TJLabsBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDe
             if containsScanFilter(scanFilter: self.scanFilters, bleName: bleName) {
                 if bleName.contains("TJ-") { self.wardLastScannedTime = self.bleLastScannedTime }
                 
-                let deviceIDString = bleName.substring(from: 8, to: 15)
+                let deviceIDString = self.scanFilters.isEmpty ? bleName : bleName.substring(from: 8, to: 15)
                 var userInfo = [String:String]()
                 userInfo["Identifier"] = peripheral.identifier.uuidString
                 userInfo["DeviceID"] = deviceIDString

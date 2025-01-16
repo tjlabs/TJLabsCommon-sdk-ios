@@ -15,6 +15,8 @@ public class RFDGenerator: NSObject {
     
     public init(userId: String) {
         self.userId = userId
+        self.scanFilters = [RfdScanFilter.TJ]
+        bleManager.setScanFilters(scanFilter: self.scanFilters)
     }
     
     public func setScanMode(scanMode: ScanMode) {
@@ -28,6 +30,7 @@ public class RFDGenerator: NSObject {
         case .WARD_SEI_SCAN:
             self.scanFilters = [RfdScanFilter.TJ, RfdScanFilter.NI]
         }
+        print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " setScanMode : scanMode = \(scanMode)")
     }
     
     public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) {
@@ -41,12 +44,11 @@ public class RFDGenerator: NSObject {
         if startScanBLE.0 {
             self.timerInterval = rfdIntervalMillis
             self.bleScanWindowTime = bleScanWindowTimeMillis
-            
             bleManager.setBleScanWindowTime(value: bleScanWindowTimeMillis)
             bleManager.setMinRssiThreshold(value: minRssiThreshold)
             bleManager.setMaxRssiThreshold(value: maxRssiThreshold)
-            
             startTimer()
+            print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : start RFD generation")
         } else {
             delegate?.onRfdError(self, code: RFDErrorCode().BLUETOOTH_DISABLED, msg: "??")
         }
@@ -55,6 +57,7 @@ public class RFDGenerator: NSObject {
     public func stopRfdGeneration() {
         bleManager.stopScan()
         stopTimer()
+        print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : stop RFD generation")
     }
     
     // Hide //
