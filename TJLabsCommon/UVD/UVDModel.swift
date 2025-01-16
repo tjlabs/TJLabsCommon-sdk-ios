@@ -150,7 +150,7 @@ public struct UnitDRInfo {
 
 // MARK: - Protocol
 public protocol UVDGeneratorDelegate: AnyObject {
-    func onUvdResult(_ generator: UVDGenerator, userVelocity: UserVelocity)
+    func onUvdResult(_ generator: UVDGenerator, mode: UserMode, userVelocity: UserVelocity)
     func onPressureResult(_ generator: UVDGenerator, hPa: Double)
     func onVelocityResult(_ generator: UVDGenerator, kmPh: Double)
     func onUvdPauseMillis(_ generator: UVDGenerator, time: Double)

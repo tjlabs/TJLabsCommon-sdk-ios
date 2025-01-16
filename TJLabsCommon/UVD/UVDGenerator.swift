@@ -60,7 +60,7 @@ public class UVDGenerator: NSObject {
         
         if pdrUnit.isIndexChanged {
             let userVelocity = UserVelocity(user_id: self.userId, mobile_time: TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds(), index: pdrUnit.index, length: pdrUnit.length, heading: attDegree.yaw, looking: isLookingStatus)
-            delegate?.onUvdResult(self, userVelocity: userVelocity)
+            delegate?.onUvdResult(self, mode: .MODE_PEDESTRIAN, userVelocity: userVelocity)
             uvdGenerationTimeMillis = currentTime
         } else {
             delegate?.onUvdPauseMillis(self, time: currentTime - uvdGenerationTimeMillis)
