@@ -42,3 +42,19 @@ public extension Array where Element == Double {
         return sqrt(squareSum / Double(count))
     }
 }
+
+public func += <V> ( left: inout [V], right: V) {
+    left.append(right)
+}
+
+public func + <V>(left: Array<V>, right: V) -> Array<V>
+{
+    var map = Array<V>()
+    for (v) in left {
+        map.append(v)
+    }
+
+    map.append(right)
+
+    return map
+}

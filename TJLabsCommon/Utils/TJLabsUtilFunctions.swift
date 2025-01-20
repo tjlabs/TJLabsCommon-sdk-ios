@@ -86,6 +86,81 @@ public class TJLabsUtilFunctions: NSObject {
         return radian * 180 / .pi
     }
 
+    public func sliceArrayFrom<T>(_ array: [T], startingFrom index: Int) -> [T] {
+        guard index >= 0 && index < array.count else {
+            return []
+        }
+        
+        return Array(array[index...])
+    }
+
+    public func sliceArrayTo<T>(_ array: [T], endTo index: Int) -> [T] {
+        guard index >= 0, index < array.count else {
+            return []
+        }
+
+        return Array(array[0...index])
+    }
+    
+    public func sliceArrayFromTo<T>(_ array: [T], startingFrom: Int, endTo: Int) -> [T] {
+        guard startingFrom >= 0 && startingFrom < array.count else {
+            return []
+        }
+        guard endTo >= 0, endTo < array.count else {
+            return []
+        }
+        return Array(array[startingFrom...endTo])
+    }
+    
+    public func calculateCircularMean(for array: [Double]) -> Double {
+        guard !array.isEmpty else {
+            return 0.0
+        }
+        
+        var sinSum = 0.0
+        var cosSum = 0.0
+        
+        for angle in array {
+            sinSum += sin(angle * .pi / 180.0)
+            cosSum += cos(angle * .pi / 180.0)
+        }
+        
+        let meanSin = sinSum / Double(array.count)
+        let meanCos = cosSum / Double(array.count)
+        
+        let meanAngle = atan2(meanSin, meanCos) * 180.0 / .pi
+        
+        return (meanAngle < 0) ? meanAngle + 360.0 : meanAngle
+    }
+
+    public func calculateCircularStd(for array: [Double]) -> Double {
+        guard !array.isEmpty else {
+            return 20.0
+        }
+        
+        let meanAngle = calculateCircularMean(for: array)
+        let circularDifferences = array.map { calDegreeDifference(from: $0, to: meanAngle) }
+        
+        var powSum: Double = 0
+        for i in 0..<circularDifferences.count {
+            powSum += circularDifferences[i]*circularDifferences[i]
+        }
+        let circularVariance = powSum / Double(circularDifferences.count)
+        
+        return sqrt(circularVariance)
+    }
+    
+    public func subtractConstantInArray(from array: [Double], constant: Double) -> [Double] {
+        let newArray = array.map { abs($0 - constant) }
+        if let minIndex = newArray.enumerated().min(by: { $0.element < $1.element })?.offset {
+            var mutableArray = array
+            mutableArray.remove(at: minIndex)
+            return mutableArray
+        } else {
+            return array
+        }
+    }
+    
     // MARK: - private
     func calAttEMA(preAttEMA: Attitude, curAtt: Attitude, windowSize: Int) -> Attitude {
         return Attitude(
