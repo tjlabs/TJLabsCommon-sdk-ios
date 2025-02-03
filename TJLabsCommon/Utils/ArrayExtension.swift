@@ -33,7 +33,11 @@ public extension Array where Element == Double {
         let meanValue = mean
         let squareSum = reduce(0, {$0 + pow($1 - meanValue, 2)})
         
-        return squareSum/Double(self.count-1)
+        if self.count-1 < 1 {
+            return 0
+        } else {
+            return squareSum/Double(self.count-1)
+        }
     }
     
     var standardDeviation: Double {

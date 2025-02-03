@@ -34,6 +34,9 @@ public class TJLabsUtilFunctions: NSObject {
     }
 
     public func movingAverage(preAvgValue: Double, curValue: Double, windowSize: Int) -> Double {
+        if windowSize == 1 {
+            return curValue
+        }
         let windowSizeDouble = Double(windowSize)
         return preAvgValue * ((windowSizeDouble - 1) / windowSizeDouble) + (curValue / windowSizeDouble)
     }
