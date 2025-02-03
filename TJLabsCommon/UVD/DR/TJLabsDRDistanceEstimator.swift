@@ -15,7 +15,6 @@ class TJLabsDRDistanceEstimator: NSObject {
     var magQueue = LinkedList<SensorAxisValue>()
     
     var navGyroZQueue = [Double]()
-    var accNormQueue = [Double]()
     var magNormQueue = [Double]()
     var magNormSmoothingQueue = [Double]()
     var magNormVarQueue = [Double]()
@@ -23,7 +22,6 @@ class TJLabsDRDistanceEstimator: NSObject {
     
     var featureExtractionCount = 0
     
-    var preAccNormSmoothing = 0.0
     var preNavGyroZSmoothing = 0.0
     var preMagNormSmoothing = 0.0
     var preMagVarFeature = 0.0
@@ -34,7 +32,6 @@ class TJLabsDRDistanceEstimator: NSObject {
     var scCompensation = 1.0
     
     var preTime = 0.0
-    var velocityAcc = 0.0
     var distance = 0.0
     
     var preRoll = 0.0
@@ -61,19 +58,10 @@ class TJLabsDRDistanceEstimator: NSObject {
         } else {
             prePitch = accPitch
         }
-        
+
         let accAttitude = Attitude(roll: accRoll, pitch: accPitch, yaw: 0)
-        let accMovingDirection = TJLabsUtilFunctions.shared.transBody2Nav(att: accAttitude, data: acc)[1]
         let gyroNavZ = abs(TJLabsUtilFunctions.shared.transBody2Nav(att: accAttitude, data: gyro)[2])
-        
-        let accNorm = TJLabsUtilFunctions.shared.l2Normalize(originalVector: sensorData.acc)
         let magNorm = TJLabsUtilFunctions.shared.l2Normalize(originalVector: sensorData.mag)
-        
-        // Acceleration
-        let accNormSmoothing = applyEMA(preEMA: preAccNormSmoothing, curValue: accNorm, windowSize: max(5, accNormQueue.count))
-        preAccNormSmoothing = accNormSmoothing
-        updateQueue(&accNormQueue, with: accNormSmoothing, maxSize: Int(UVDGenerator.sensorFrequency))
-        let accNormVar = accNormQueue.variance
 
         // Gyro
         updateQueue(&navGyroZQueue, with: gyroNavZ, maxSize: FEATURE_EXTRACTION_SIZE)
@@ -85,16 +73,15 @@ class TJLabsDRDistanceEstimator: NSObject {
         let magNormSmoothing = applyEMA(preEMA: preMagNormSmoothing, curValue: magNorm, windowSize: max(5, featureExtractionCount))
         preMagNormSmoothing = magNormSmoothing
         updateQueue(&magNormSmoothingQueue, with: magNormSmoothing, maxSize: Int(UVDGenerator.sensorFrequency))
-
         var magNormVar = min(magNormSmoothingQueue.variance, 7)
+
         updateQueue(&magNormVarQueue, with: magNormVar, maxSize: Int(UVDGenerator.sensorFrequency * 2))
-        
         let magVarFeature = applyEMA(preEMA: preMagVarFeature, curValue: magNormVar, windowSize: max(Int(UVDGenerator.sensorFrequency * 2), magNormVarQueue.count))
         preMagVarFeature = magVarFeature
-
+        
         let velocityRaw = log10(magVarFeature + 1) / log10(1.1)
         updateQueue(&velocityQueue, with: velocityRaw, maxSize: Int(UVDGenerator.sensorFrequency))
-
+        
         let velocitySmoothing = applyEMA(preEMA: preVelocitySmoothing, curValue: velocityRaw, windowSize: max(Int(UVDGenerator.sensorFrequency), velocityQueue.count))
         preVelocitySmoothing = velocitySmoothing
 
@@ -104,10 +91,9 @@ class TJLabsDRDistanceEstimator: NSObject {
         let velocityInput = min(max(velocitySmoothing, VELOCITY_MIN), VELOCITY_MAX)
         let velocityNotStop = velocityInput * velocityScale * entranceVelocityScale
         let velocityInputScale = min(max(velocityNotStop, VELOCITY_MIN), VELOCITY_MAX)
-
         let delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
         let velocityMps = (velocityInputScale / 3.6) * turnScale
-        finalUnitResult.velocity = velocityMps
+        finalUnitResult.velocity = velocityMps * 3.6
 
         distance += velocityMps * delT
         if distance > OUTPUT_DISTANCE_SETTING {
