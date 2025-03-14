@@ -66,4 +66,5 @@ public struct ReceivedForce: Encodable {
 public protocol RFDGeneratorDelegate: AnyObject {
     func onRfdResult(_ generator: RFDGenerator, receivedForce: ReceivedForce)
     func onRfdError(_ generator: RFDGenerator, code: Int, msg: String)
+    func onRfdEmptyMillis(_ generator: RFDGenerator, time: Double)
 }

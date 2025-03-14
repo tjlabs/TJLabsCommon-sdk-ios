@@ -9,6 +9,7 @@ public class RFDGenerator: NSObject {
     var scanFilters: [RfdScanFilter] = [RfdScanFilter.TJ]
     var timerInterval: TimeInterval = 1/2
     var bleScanWindowTime: Double = 0
+    private var rfdGenerationTimeMillis: Double = 0
     
     // Bluetooth Observing Variables
     let BLE_OFF_THRESHOLD: Double = 4
@@ -65,6 +66,7 @@ public class RFDGenerator: NSObject {
     
     func startTimer() {
         if (self.receivedForceTimer == nil) {
+            self.rfdGenerationTimeMillis = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
             let queueRfd = DispatchQueue(label: Bundle.main.bundleIdentifier! + ".receivedForceTimer")
             self.receivedForceTimer = DispatchSource.makeTimerSource(queue: queueRfd)
             self.receivedForceTimer!.schedule(deadline: .now(), repeating: timerInterval)
@@ -121,6 +123,11 @@ public class RFDGenerator: NSObject {
         case .success(let trimmedBLE):
             let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
             let pressureValue = pressureProvider()
+            if bleAvg.isEmpty {
+                delegate?.onRfdEmptyMillis(self, time: currentTime - self.rfdGenerationTimeMillis)
+            } else {
+                self.rfdGenerationTimeMillis = currentTime
+            }
             data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: bleAvg, pressure: pressureValue)
         case .failure(let error):
             data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: [String: Double](), pressure: 0)
