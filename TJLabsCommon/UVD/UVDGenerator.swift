@@ -73,7 +73,9 @@ public class UVDGenerator: NSObject {
     
     func generateVehicleUvd(sensorData: SensorData) {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-        let drUnit = drDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
+        let estimatedDr = drDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
+        let drUnit = estimatedDr.0
+        let magNormSmootingVar = estimatedDr.1
         let attDegree = attitudeEstimator.estimateAccAttitudeRadian(time: currentTime, acc: sensorData.acc, gyro: sensorData.gyro).toDegree()
         
         if drUnit.isIndexChanged {
@@ -85,6 +87,7 @@ public class UVDGenerator: NSObject {
         }
         delegate?.onPressureResult(self, hPa: sensorData.pressure[0])
         delegate?.onVelocityResult(self, kmPh: resetVelocityAfterSeconds(velocity: drUnit.velocity))
+        delegate?.onMagNormSmoothingVarResult(self, value: magNormSmootingVar)
     }
     
     func generateAutoUvd() {
