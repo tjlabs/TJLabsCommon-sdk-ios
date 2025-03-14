@@ -39,7 +39,7 @@ class TJLabsDRDistanceEstimator: NSObject {
 
     override init() { }
     
-    func estimateDistanceInfo(time: Double, sensorData: SensorData) -> UnitDistance {
+    func estimateDistanceInfo(time: Double, sensorData: SensorData) -> (UnitDistance, Double) {
         let acc = sensorData.acc
         let gyro = sensorData.gyro
         let mag = sensorData.mag
@@ -73,10 +73,10 @@ class TJLabsDRDistanceEstimator: NSObject {
         let magNormSmoothing = applyEMA(preEMA: preMagNormSmoothing, curValue: magNorm, windowSize: max(5, featureExtractionCount))
         preMagNormSmoothing = magNormSmoothing
         updateQueue(&magNormSmoothingQueue, with: magNormSmoothing, maxSize: Int(UVDGenerator.sensorFrequency))
-        var magNormVar = min(magNormSmoothingQueue.variance, 7)
+        let magNormSmoothingVar = min(magNormSmoothingQueue.variance, 7)
 
-        updateQueue(&magNormVarQueue, with: magNormVar, maxSize: Int(UVDGenerator.sensorFrequency * 2))
-        let magVarFeature = applyEMA(preEMA: preMagVarFeature, curValue: magNormVar, windowSize: max(Int(UVDGenerator.sensorFrequency * 2), magNormVarQueue.count))
+        updateQueue(&magNormVarQueue, with: magNormSmoothingVar, maxSize: Int(UVDGenerator.sensorFrequency * 2))
+        let magVarFeature = applyEMA(preEMA: preMagVarFeature, curValue: magNormSmoothingVar, windowSize: max(Int(UVDGenerator.sensorFrequency * 2), magNormVarQueue.count))
         preMagVarFeature = magVarFeature
         
         let velocityRaw = log10(magVarFeature + 1) / log10(1.1)
@@ -106,7 +106,7 @@ class TJLabsDRDistanceEstimator: NSObject {
         
         featureExtractionCount += 1
         preTime = time
-        return finalUnitResult
+        return (finalUnitResult, magNormSmoothingVar)
     }
     
     private func applyEMA(preEMA: Double, curValue: Double, windowSize: Int) -> Double {
