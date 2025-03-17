@@ -39,6 +39,11 @@ public class RFDGenerator: NSObject {
         print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " setScanMode : scanMode = \(scanMode)")
     }
     
+    public func checkIsAvailableRfd() -> Bool {
+        let permission = bleManager.checkPermission()
+        return permission.hasPermission
+    }
+    
     public func generateRfd(rfdIntervalMillis: TimeInterval = 1/2, bleScanWindowTimeMillis: Double = 1000, minRssiThreshold: Int = -100, maxRssiThreshold: Int = -40) {
         self.timerInterval = rfdIntervalMillis
         self.bleScanWindowTime = bleScanWindowTimeMillis

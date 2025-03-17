@@ -33,6 +33,11 @@ public class UVDGenerator: NSObject {
         return TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble() - self.uvdGenerationTimeMillis < sec*1000 ? velocity : 0
     }
     
+    public func checkIsAvailableUvd() -> Bool {
+        let initSensors = sensorManager.initSensorManager()
+        return initSensors.0
+    }
+    
     public func generateUvd(defaultPDRStepLength: Double = 0.6, minPDRStepLength: Double = 0.5, maxPDRStepLength: Double = 0.7) {
         let initSensors = sensorManager.initSensorManager()
         if initSensors.0 {
@@ -41,7 +46,7 @@ public class UVDGenerator: NSObject {
             pdrDistanceEstimator.setMaxStepLength(length: maxPDRStepLength)
             startTimer()
             print(TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Info : start UVD generation")
-        } else  {
+        } else {
             delegate?.onUvdError(self, error: initSensors.1)
         }
     }
