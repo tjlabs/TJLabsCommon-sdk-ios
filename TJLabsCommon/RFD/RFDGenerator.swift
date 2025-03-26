@@ -116,36 +116,53 @@ public class RFDGenerator: NSObject {
     }
     
     func receivedForceTimerUpdate() {
-        self.checkBluetoothState()
-        let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-        let rfdTime = currentTime - (bleScanWindowTime/2)
-        
-        let bleDictionary = bleManager.getBLEDictionary()
-        let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, scanWindowTime: self.bleScanWindowTime)
-        
-        let data: ReceivedForce
-        switch trimmedResult {
-        case .success(let trimmedBLE):
-            let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
+        if JupiterSimulator.shared.isSimulationMode {
+            // MARK: Simulation
+            let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
+            let rfdTime = currentTime - (bleScanWindowTime/2)
+            let bleAvg = JupiterSimulator.shared.getSimulationBleData()
             let pressureValue = pressureProvider()
+            
             if bleAvg.isEmpty {
                 delegate?.onRfdEmptyMillis(self, time: currentTime - self.rfdGenerationTimeMillis)
             } else {
                 self.rfdGenerationTimeMillis = currentTime
             }
+            let data: ReceivedForce
             data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: bleAvg, pressure: pressureValue)
-        case .failure(let error):
-            data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: [String: Double](), pressure: 0)
-            switch error {
-            case TrimBleDataError.invalidInput:
-                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : invalidInput in RFD trmming")
-            case TrimBleDataError.noValidData:
-                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : noValidData in RFD trmming")
-            default:
-                delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : default in RFD trmming")
+            delegate?.onRfdResult(self, receivedForce: data)
+        } else {
+            // MARK: Real
+            self.checkBluetoothState()
+            let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
+            let rfdTime = currentTime - (bleScanWindowTime/2)
+            
+            let bleDictionary = bleManager.getBLEDictionary()
+            let trimmedResult = TJLabsBluetoothFunctions.shared.trimBleData(bleInput: bleDictionary, nowTime: currentTime, scanWindowTime: self.bleScanWindowTime)
+            
+            let data: ReceivedForce
+            switch trimmedResult {
+            case .success(let trimmedBLE):
+                let bleAvg = TJLabsBluetoothFunctions.shared.avgBleData(bleDictionary: trimmedBLE)
+                let pressureValue = pressureProvider()
+                if bleAvg.isEmpty {
+                    delegate?.onRfdEmptyMillis(self, time: currentTime - self.rfdGenerationTimeMillis)
+                } else {
+                    self.rfdGenerationTimeMillis = currentTime
+                }
+                data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: bleAvg, pressure: pressureValue)
+            case .failure(let error):
+                data = ReceivedForce(user_id: self.userId, mobile_time: Int(rfdTime), ble: [String: Double](), pressure: 0)
+                switch error {
+                case TrimBleDataError.invalidInput:
+                    delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : invalidInput in RFD trmming")
+                case TrimBleDataError.noValidData:
+                    delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : noValidData in RFD trmming")
+                default:
+                    delegate?.onRfdError(self, code: RFDErrorCode().INVALID_RSSI, msg: TJLabsUtilFunctions.shared.getLocalTimeString() + " , " + CommonConstants.COMMON_HEADER + " Error : default in RFD trmming")
+                }
             }
+            delegate?.onRfdResult(self, receivedForce: data)
         }
-        
-        delegate?.onRfdResult(self, receivedForce: data)
     }
 }

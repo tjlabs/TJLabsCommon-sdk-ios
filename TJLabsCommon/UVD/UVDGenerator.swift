@@ -121,8 +121,16 @@ public class UVDGenerator: NSObject {
     }
     
     func userVelocityTimerUpdate() {
+        var sensorData = SensorData()
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
-        let sensorData = sensorManager.getSensorData()
+        if JupiterSimulator.shared.isSimulationMode {
+            // MARK: Simulation
+            sensorData = JupiterSimulator.shared.getSimulationSensorData()
+        } else {
+            // MARK: Real
+            sensorData = sensorManager.getSensorData()
+        }
+        
         switch self.userMode {
         case .MODE_PEDESTRIAN:
             self.generatePedestrainUvd(sensorData: sensorData)
