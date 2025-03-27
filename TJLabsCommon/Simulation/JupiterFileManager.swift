@@ -2,7 +2,7 @@
 import Foundation
 
 public class JupiterFileManager {
-    static let shared = JupiterFileManager()
+    public static let shared = JupiterFileManager()
     
     private let dataQueue = DispatchQueue(label: "tjlabs.jupiter.dataQueue", attributes: .concurrent)
     
