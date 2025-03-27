@@ -37,8 +37,11 @@ public class JupiterFileManager {
 //        collectData = [OlympusCollectData]()
     }
     
-    public func setRegion(region: String) {
+    public func set(region: String, sectorId: Int, deviceModel: String, osVersion: Int) {
         self.region = region
+        self.sector_id = sectorId
+        self.deviceModel = deviceModel
+        self.osVersion = osVersion
     }
     
     private func createExportDirectory() -> URL? {
