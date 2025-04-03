@@ -120,4 +120,8 @@ class TJLabsDRDistanceEstimator: NSObject {
         }
         queue.append(data)
     }
+    
+    func setVelocityScale(scale: Double) {
+        velocityScale = scale
+    }
 }

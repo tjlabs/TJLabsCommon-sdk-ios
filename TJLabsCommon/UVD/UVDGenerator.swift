@@ -26,7 +26,7 @@ public class UVDGenerator: NSObject {
     }
     
     public func updateDrVelocityScale(scale: Double) {
-        // TODO
+        drDistanceEstimator.setVelocityScale(scale: scale)
     }
     
     func resetVelocityAfterSeconds(velocity: Double, sec: Double = 2) -> Double {
