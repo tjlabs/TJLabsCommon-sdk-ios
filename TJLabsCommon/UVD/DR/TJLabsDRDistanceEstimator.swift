@@ -107,7 +107,6 @@ class TJLabsDRDistanceEstimator: NSObject {
         let velocityMps = (velocityInputScale / 3.6) * turnScale
         finalUnitResult.isIndexChanged = false
         finalUnitResult.velocity = velocityMps * 3.6
-
         distance += velocityMps * delT
         if distance > OUTPUT_DISTANCE_SETTING {
             index += 1
