@@ -65,37 +65,48 @@ class TJLabsDRDistanceEstimator: NSObject {
 
         // Gyro
         updateQueue(&navGyroZQueue, with: gyroNavZ, maxSize: FEATURE_EXTRACTION_SIZE)
-        let navGyroZSmoothing = applyEMA(preEMA: preNavGyroZSmoothing, curValue: gyroNavZ, windowSize: max(FEATURE_EXTRACTION_SIZE, navGyroZQueue.count))
+        let navGyroZSmoothing = applyEMA(preEMA: preNavGyroZSmoothing, curValue: gyroNavZ, windowSize: min(FEATURE_EXTRACTION_SIZE, navGyroZQueue.count))
         preNavGyroZSmoothing = navGyroZSmoothing
 
         // Magnetic Field
         updateQueue(&magNormQueue, with: magNorm, maxSize: 5)
-        let magNormSmoothing = applyEMA(preEMA: preMagNormSmoothing, curValue: magNorm, windowSize: max(5, featureExtractionCount))
+        let magNormSmoothing = applyEMA(preEMA: preMagNormSmoothing, curValue: magNorm, windowSize: min(5, featureExtractionCount))
         preMagNormSmoothing = magNormSmoothing
         updateQueue(&magNormSmoothingQueue, with: magNormSmoothing, maxSize: Int(UVDGenerator.sensorFrequency))
         let magNormSmoothingVar = min(magNormSmoothingQueue.variance, 7)
 
         updateQueue(&magNormVarQueue, with: magNormSmoothingVar, maxSize: Int(UVDGenerator.sensorFrequency * 2))
-        let magVarFeature = applyEMA(preEMA: preMagVarFeature, curValue: magNormSmoothingVar, windowSize: max(Int(UVDGenerator.sensorFrequency * 2), magNormVarQueue.count))
+        let magVarFeature = applyEMA(preEMA: preMagVarFeature, curValue: magNormSmoothingVar, windowSize: min(Int(UVDGenerator.sensorFrequency * 2), magNormVarQueue.count))
         preMagVarFeature = magVarFeature
         
         let velocityRaw = log10(magVarFeature + 1) / log10(1.1)
         updateQueue(&velocityQueue, with: velocityRaw, maxSize: Int(UVDGenerator.sensorFrequency))
         
-        let velocitySmoothing = applyEMA(preEMA: preVelocitySmoothing, curValue: velocityRaw, windowSize: max(Int(UVDGenerator.sensorFrequency), velocityQueue.count))
+        let velocitySmoothing = applyEMA(preEMA: preVelocitySmoothing, curValue: velocityRaw, windowSize: min(Int(UVDGenerator.sensorFrequency), velocityQueue.count))
         preVelocitySmoothing = velocitySmoothing
 
         var turnScale = exp(-navGyroZSmoothing / 2)
         turnScale = turnScale > 0.87 ? 1.0 : turnScale
         
-        let velocityInput = min(max(velocitySmoothing, VELOCITY_MIN), VELOCITY_MAX)
+        var velocityInput = velocitySmoothing
+        if velocityInput < VELOCITY_MIN {
+            velocityInput = 0
+        } else if velocityInput > VELOCITY_MAX {
+            velocityInput = VELOCITY_MAX
+        }
+        
         let velocityNotStop = velocityInput * velocityScale * entranceVelocityScale
-        let velocityInputScale = min(max(velocityNotStop, VELOCITY_MIN), VELOCITY_MAX)
+        var velocityInputScale = velocityNotStop
+        if velocityInputScale < VELOCITY_MIN {
+            velocityInputScale = 0
+        } else if velocityInputScale > VELOCITY_MAX {
+            velocityInputScale = VELOCITY_MAX
+        }
+        
         let delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
         let velocityMps = (velocityInputScale / 3.6) * turnScale
         finalUnitResult.isIndexChanged = false
         finalUnitResult.velocity = velocityMps * 3.6
-
         distance += velocityMps * delT
         if distance > OUTPUT_DISTANCE_SETTING {
             index += 1
