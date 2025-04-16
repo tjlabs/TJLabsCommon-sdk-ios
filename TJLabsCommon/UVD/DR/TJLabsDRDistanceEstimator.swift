@@ -109,7 +109,6 @@ class TJLabsDRDistanceEstimator: NSObject {
         } else {
             delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
         }
-//        let delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
         let velocityMps = (velocityInputScale / 3.6) * turnScale
         finalUnitResult.isIndexChanged = false
         finalUnitResult.velocity = velocityMps * 3.6
