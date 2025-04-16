@@ -18,7 +18,11 @@ class TJLabsAttitudeEstimator: NSObject {
     var preRoll: Double = 0
     var prePitch: Double = 0
     
-    func estimateAttitudeRadian(time: Double, acc:[Double], gyro: [Double], rotMatrix: [[Double]]) -> Attitude {
+    func estimateAttitudeRadian(time: Double, sensorData: SensorData) -> Attitude {
+        let acc = sensorData.acc
+        let gyro = sensorData.gyro
+        let rotMatrix = sensorData.rotationMatrix
+        
         // 휴대폰의 자세(기울어짐 정도)를 계산하여 각도(Radian)로 저장
         let attFromRotMatrix = TJLabsUtilFunctions.shared.calAttitudeUsingRotMatrix(rotationMatrix: rotMatrix)
         let gyroNavGame = TJLabsUtilFunctions.shared.transBody2Nav(att: attFromRotMatrix, data: gyro)
@@ -48,10 +52,11 @@ class TJLabsAttitudeEstimator: NSObject {
             headingGyroGame = gyroNavGame[2] * (1/frequency)
             headingGyroAcc = gyroNavEMAAcc[2] * (1/frequency)
         } else {
-            let angleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: time - timeBefore, angularVelocity: gyroNavGame[2])
+            let delT: Double = JupiterSimulator.shared.isSimulationMode ? (Double(sensorData.time) - timeBefore) : (time - timeBefore)
+            let angleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: delT, angularVelocity: gyroNavGame[2])
             headingGyroGame += angleOfRotation
             
-            let accAngleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: time - timeBefore, angularVelocity: gyroNavEMAAcc[2])
+            let accAngleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: delT, angularVelocity: gyroNavEMAAcc[2])
             headingGyroAcc += accAngleOfRotation
         }
         
@@ -68,12 +73,14 @@ class TJLabsAttitudeEstimator: NSObject {
         let curAttitude = Attitude(roll: accAttEMA.roll, pitch: accAttEMA.pitch, yaw: headingGyroAcc)
         preGameVecAttEMA = gameVecAttEMA
         preAccAttEMA = accAttEMA
-        timeBefore = time
+        timeBefore = JupiterSimulator.shared.isSimulationMode ? Double(sensorData.time) : time
         
         return curAttitude
     }
     
-    func estimateAccAttitudeRadian(time: Double, acc:[Double], gyro: [Double]) -> Attitude {
+    func estimateAccAttitudeRadian(time: Double, sensorData: SensorData) -> Attitude {
+        let acc = sensorData.acc
+        let gyro = sensorData.gyro
         // 휴대폰의 자세(기울어짐 정도)를 계산하여 각도(Radian)로 저장
         let accRoll = TJLabsUtilFunctions.shared.callRollUsingAcc(acc: acc)
         let accPitch = TJLabsUtilFunctions.shared.callPitchUsingAcc(acc: acc)
@@ -86,7 +93,8 @@ class TJLabsAttitudeEstimator: NSObject {
         if (timeBefore == 0) {
             headingGyroAcc = gyroNavEMAAcc[2] * (1/frequency)
         } else {
-            let accAngleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: time - timeBefore, angularVelocity: gyroNavEMAAcc[2])
+            let delT = JupiterSimulator.shared.isSimulationMode ? (Double(sensorData.time) - timeBefore) : (time - timeBefore)
+            let accAngleOfRotation = TJLabsUtilFunctions.shared.calAngleOfRotation(timeInterval: delT, angularVelocity: gyroNavEMAAcc[2])
             headingGyroAcc += accAngleOfRotation
         }
         
@@ -99,7 +107,7 @@ class TJLabsAttitudeEstimator: NSObject {
         // 누적된 회줜 값으로 현재 Attitude 계산
         let curAttitude = Attitude(roll: accAttEMA.roll, pitch: accAttEMA.pitch, yaw: headingGyroAcc)
         preAccAttEMA = accAttEMA
-        timeBefore = time
+        timeBefore = JupiterSimulator.shared.isSimulationMode ? Double(sensorData.time) : time
         
         return curAttitude
     }
