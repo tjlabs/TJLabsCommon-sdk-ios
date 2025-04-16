@@ -65,7 +65,7 @@ public class UVDGenerator: NSObject {
     func generatePedestrainUvd(sensorData: SensorData) {
         let currentTime = TJLabsUtilFunctions.shared.getCurrentTimeInMillisecondsDouble()
         let pdrUnit = pdrDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
-        let attDegree = attitudeEstimator.estimateAttitudeRadian(time: currentTime, acc: sensorData.acc, gyro: sensorData.gyro, rotMatrix: sensorData.rotationMatrix).toDegree()
+        let attDegree = attitudeEstimator.estimateAttitudeRadian(time: currentTime, sensorData: sensorData).toDegree()
         let isLookingStatus = unitStatusEstimator.estimateStatus(attDegree: attDegree, isIndexChanged: pdrUnit.isIndexChanged)
         
         if pdrUnit.isIndexChanged {
@@ -84,7 +84,7 @@ public class UVDGenerator: NSObject {
         let estimatedDr = drDistanceEstimator.estimateDistanceInfo(time: currentTime, sensorData: sensorData)
         let drUnit = estimatedDr.0
         let magNormSmootingVar = estimatedDr.1
-        let attDegree = attitudeEstimator.estimateAccAttitudeRadian(time: currentTime, acc: sensorData.acc, gyro: sensorData.gyro).toDegree()
+        let attDegree = attitudeEstimator.estimateAccAttitudeRadian(time: currentTime, sensorData: sensorData).toDegree()
         
         if drUnit.isIndexChanged {
             let userVelocity = UserVelocity(user_id: self.userId, mobile_time: TJLabsUtilFunctions.shared.getCurrentTimeInMilliseconds(), index: drUnit.index, length: drUnit.length, heading: attDegree.yaw, looking: true)

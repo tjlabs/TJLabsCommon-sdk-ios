@@ -103,7 +103,13 @@ class TJLabsDRDistanceEstimator: NSObject {
             velocityInputScale = VELOCITY_MAX
         }
         
-        let delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
+        var delT: Double = 0
+        if JupiterSimulator.shared.isSimulationMode {
+            delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (Double(sensorData.time) - preTime) * 1e-3
+        } else {
+            delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
+        }
+//        let delT = preTime == 0 ? 1 / UVDGenerator.sensorFrequency : (time - preTime) * 1e-3
         let velocityMps = (velocityInputScale / 3.6) * turnScale
         finalUnitResult.isIndexChanged = false
         finalUnitResult.velocity = velocityMps * 3.6
@@ -117,7 +123,7 @@ class TJLabsDRDistanceEstimator: NSObject {
         }
         
         featureExtractionCount += 1
-        preTime = time
+        preTime = JupiterSimulator.shared.isSimulationMode ? Double(sensorData.time) : time
         return (finalUnitResult, magNormSmoothingVar)
     }
     
